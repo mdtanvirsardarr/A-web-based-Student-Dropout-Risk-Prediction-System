@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="en" data-role="admin">
+<head>
+  <meta charset="utf-8" />
+  <title>Admin • Departments + Email</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#f6f8fc; --surface:#fff; --fg:#0f172a; --muted:#5f6b7a; --border:#e5e7eb;
+      --accent:#1a73e8; --danger:#d93025; --ok:#188038; --warn:#f59e0b;
+      --header-h:72px; --footer-h:56px; --aside-w:320px; --gutter:18px;
+      --radius:0; --shadow:0 1px 2px rgba(0,0,0,.05), 0 2px 8px rgba(0,0,0,.04);
+      --row-h:64px; --chip:#0f172a0a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif;color:var(--fg);background:var(--bg)}
+    a{color:inherit;text-decoration:none}
+    .hidden{display:none!important}
+
+    /* Header */
+    header{position:fixed;inset:0 0 auto 0;height:var(--header-h);background:linear-gradient(90deg,#1e3a8a,#0b1220);border-bottom:1px solid var(--border);z-index:1000;color: white;}
+    .hdr{height:100%;max-width:1600px;margin:0 auto;display:flex;align-items:center;gap:16px;padding:0 18px}
+    .logo{display:flex;align-items:center;gap:10px;font-weight:800}
+    .logo .mark{width:26px;height:20px;border:2px solid var(--accent);border-radius:3px;position:relative}
+    .logo .mark::after{content:"";position:absolute;inset:-2px -2px auto auto;border-left:12px solid var(--accent);border-top:12px solid transparent}
+    .hdr-search{flex:1 1 auto;display:flex;align-items:center;justify-content:center}
+    .search-pill{width:min(880px,100%);display:flex;align-items:center;gap:10px;background:#f1f3f4;border:1px solid #e0e3e7;border-radius:999px;padding:10px 14px}
+    .search-pill input{all:unset;width:100%;font:inherit;color:var(--fg)}
+    .hdr-nav{display:flex;gap:14px;margin-left:auto}
+    .hdr-nav a{color:white;font-weight:600;font-size:14px;padding:8px 10px;border-radius:8px}
+    .hdr-nav a:hover{background:red}
+    .hamburger{display:none}
+
+    /* Footer */
+    footer{position:fixed;inset:auto 0 0 0;height:var(--footer-h);background:linear-gradient(90deg,#1e3a8a,#0b1220);border-top:1px solid var(--border);z-index:900}
+    .ftr{height:100%;max-width:1600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 18px;color:white;font-size:14px}
+
+    /* Aside */
+    aside{position:fixed;top:var(--header-h);bottom:var(--footer-h);left:0;width:var(--aside-w);background:var(--surface);color:#0f172a;padding:14px;overflow:auto;z-index:900;border-right:1px solid var(--border)}
+    .compose{width:100%;background:#c2e7ff;color:#001d35;border:1px solid #b3ddff;border-radius:28px;height:48px;font-weight:700;letter-spacing:.2px;cursor:pointer}
+    .compose:hover{filter:brightness(0.98)}
+    .aside-title{margin:12px 10px;font-size:12px;text-transform:uppercase;color:#64748b;font-weight:800}
+    .nav{display:flex;flex-direction:column;gap:2px}
+    .nav a{padding:10px 12px;border-radius:18px;display:flex;align-items:center;gap:10px;color:#0f172a;font-size:14px;font-weight:600}
+    .nav a:hover{background:#f1f3f4}
+    .nav a.active{background:#e8f0fe;color:#174ea6}
+    .nav a .count{margin-left:auto;color:#5f6368;font-weight:700}
+    .aside-foot{margin-top:16px;padding-top:12px;border-top:1px dashed var(--border);font-size:12px;color:#6b7280}
+    .notif-badge{display:none;margin-left:auto;background:var(--danger);color:#fff;border-radius:999px;font-size:.72rem;line-height:1;padding:.15rem .45rem;font-weight:800;box-shadow:0 2px 8px rgba(217,48,37,.32)}
+    .notify-pulse .notif-badge{display:inline-block;animation:pulse 1.4s ease-in-out infinite}
+    @keyframes pulse{0%{transform:scale(1);box-shadow:0 0 0 0 rgba(217,48,37,.45)}70%{transform:scale(1.06);box-shadow:0 0 0 10px rgba(217,48,37,0)}100%{transform:scale(1);box-shadow:0 0 0 0 rgba(217,48,37,0)}}
+
+    /* Main */
+    .content-wrap{padding-top:calc(var(--header-h) + var(--gutter));padding-bottom:calc(var(--footer-h) + var(--gutter));padding-left:calc(var(--aside-w) + var(--gutter));padding-right:var(--gutter);min-height:100vh}
+    .container{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .section{padding:18px}
+    .title{font-size:18px;font-weight:800;margin:0}
+    .muted{color:var(--muted);font-size:12px}
+    .pill{padding:2px 8px;border:1px solid var(--border);border-radius:999px;background:#f8fafc;font-size:12px}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--chip);border:1px dashed var(--border);font-size:12px;color:#475569}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input,select,button,textarea{appearance:none;width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;font:inherit;outline:none}
+    textarea{min-height:120px;resize:vertical}
+    input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #94a3b833;border-color:#94a3b8}
+    .btn{cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .btn-sm{padding:8px 10px;border-radius:10px}
+    .btn-lg{padding:12px 14px;border-radius:12px}
+    .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .btn-ghost{background:#fff}
+    .btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
+    .btn-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+    .btn-outline{background:#fff;border:1px dashed var(--border)}
+    .seg{display:inline-flex;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff}
+    .seg button{padding:8px 12px;border:0;background:transparent;font-weight:600;color:#475569}
+    .seg button.active{background:#e8f0fe;color:#174ea6}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .stack{display:flex;flex-direction:column;gap:12px}
+    table{width:100%;border-collapse:separate;border-spacing:0 10px}
+    th,td{padding:10px 12px;text-align:left;vertical-align:middle}
+    thead th{color:var(--muted);font-weight:600;font-size:12px}
+    .row{background:#fff;border:1px solid var(--border);border-radius:var(--radius)}
+
+    /* Mail UI */
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .mlist-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .mail-shell{display:grid;grid-template-columns:360px 10px 1fr;gap:0;min-height:640px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:#fff}
+    @media (max-width:1024px){.mail-shell{grid-template-columns:1fr}.resizer{display:none}}
+    .mail-list{background:#fff;height:100%;overflow:auto}
+    .mail-view{background:#fff;display:flex;flex-direction:column;height:100%;border-left:1px solid var(--border)}
+    .mlist-hdr{position:sticky;top:0;z-index:2;background:#fff;border-bottom:1px solid var(--border);padding:10px;display:flex;align-items:center;gap:10px;justify-content:space-between}
+    .mlist-actions{display:flex;gap:10px;align-items:center}
+    .mail-items{display:flex;flex-direction:column}
+    .mail-item{display:grid;grid-template-columns:40px 1fr auto;gap:12px;padding:0 12px;border-bottom:1px solid var(--border);cursor:pointer;align-items:center;transition:background .15s ease;height:var(--row-h)}
+    .mail-item:hover{background:#f8fbff}
+    .mail-item.active{background:#e8f0fe;box-shadow:inset 3px 0 0 var(--accent)}
+    .mail-item .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff}
+    .mail-item .who{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+    .mail-item .sub{color:#0f172a;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mail-item .snippet{color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+    .mail-item .meta{display:flex;gap:10px;align-items:center;color:#6b7280;font-size:12px;white-space:nowrap}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:#1a73e8}
+    .status-dot.read{background:#c7cdda}
+    .badge{font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px;background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
+    .mail-head{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+    .mail-subj{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:800;font-size:16px}
+    .mail-body{padding:18px;white-space:pre-wrap;line-height:1.65;color:#1f2937}
+    .reply{border-top:1px dashed var(--border);padding:16px;display:grid;gap:10px;background:#fafafa}
+    .skeleton{position:relative;overflow:hidden;background:#f1f5f9}
+    .skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:shimmer 1.2s infinite}
+    @keyframes shimmer{100%{transform:translateX(100%)}}
+    .resizer{width:10px;cursor:col-resize;background:linear-gradient(90deg,transparent,#f1f5f9,transparent);border-left:1px solid var(--border);border-right:1px solid var(--border)}
+    .resizer::after{content:"";display:block;width:2px;height:24px;background:#cbd5e1;border-radius:2px;margin:calc(50% - 12px) auto 0}
+    .resizing{user-select:none;cursor:col-resize}
+
+    /* Responsive aside */
+    @media (max-width:1024px){
+      .hamburger{display:inline-flex;margin-left:auto;background:#fff;color:#111827;border:1px solid var(--border);padding:8px 10px;border-radius:10px}
+      aside{transform:translateX(-100%);transition:transform .2s ease}
+      body.aside-open aside{transform:none}
+      .content-wrap{padding-left:var(--gutter)}
+      .mail-shell{border:0;border-radius:0}
+      .mail-view{border-left:0}
+    }
+    :root { --fs-base: 16.5px } body { font-size: var(--fs-base) } .title { font-size: 20px } .mail-subj { font-size: 18px }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="hdr">
+      <div class="logo">
+        <span class="mark" aria-hidden="true"></span>
+        <span>Department & Staffs• Mail • Admin</span>
+      </div>
+      <div class="hdr-search">
+        <div class="search-pill">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 21l-4.3-4.3m1.3-5.2a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" stroke="#5f6b7a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <input id="mailSearch" placeholder="Search mail (subject, body, people)"/>
+        </div>
+      </div>
+      <button class="hamburger" id="asideToggle" aria-expanded="false" aria-controls="sidebar">☰ Menu</button>
+      <nav class="hdr-nav">
+        <a href="/admin-dashboard">Dashboard</a>
+        <a id="logoutLink" href="auth.html">Log Out</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Aside -->
+  <aside id="sidebar" aria-label="Sidebar">
+
+    <div class="aside-title">Dept Management</div>
+    <div class="nav" id="leftNav">
+      <a href="#" data-target="sec-create">Create Departments</a>
+      <a href="#" data-target="sec-depts">View Departments</a>
+      <a href="#" data-target="sec-staff">View Staffs</a>
+      <a href="#" data-target="sec-compose">Create New Mail</a>
+      <a href="#" data-target="sec-inbox" id="navInbox">Inbox <span id="inboxBadge" class="notif-badge">0</span></a>
+      <a href="#" data-target="sec-sent">Sent</a>
+      <a href="#" data-target="sec-trash">Trash</a>
+    </div>
+
+    <div class="aside-foot">
+      Signed in as <span id="whoami">loading…</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="content-wrap">
+    <div class="container">
+
+      <!-- Create -->
+      <section id="sec-create" class="card section">
+        <div class="stack" style="gap:14px">
+          <h1 class="title">Create department & first staff login</h1>
+          <p class="muted">Creates the department and first staff account in one step.</p>
+
+          <div class="grid-2">
+            <div class="stack">
+              <div>
+                <label for="slug">Department</label>
+                <select id="slug">
+                  <option value="">-- Choose --</option>
+                  <option value="academic">Create Academic Dept</option>
+                  <option value="mental_health">Create Mental Health Dept</option>
+                  <option value="finance">Create Finance Dept</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="deptName">Department display name</label>
+                <input id="deptName" placeholder="e.g., Academic" />
+              </div>
+
+              <div>
+                <label for="staffName">Staff name</label>
+                <input id="staffName" placeholder="e.g., Raka" />
+              </div>
+
+              <div class="grid-2" style="grid-template-columns:1fr 1fr">
+                <div>
+                  <label for="email">Staff login email</label>
+                  <input id="email" type="email" placeholder="academic@example.com" />
+                </div>
+                <div>
+                  <label for="password">Staff login password</label>
+                  <input id="password" type="password" placeholder="••••••" />
+                </div>
+              </div>
+
+              <div>
+                <button class="btn btn-primary btn-lg" id="createBtn">Create</button>
+                <span class="muted" id="createMsg" style="margin-left:10px"></span>
+              </div>
+            </div>
+
+            <div class="section" style="background:#0f172a0a;border:1px solid var(--border);border-radius:12px">
+              <h3 style="margin:0 0 6px;font-size:16px">Tips</h3>
+              <ul class="muted" style="margin:8px 0 0;padding-left:18px;line-height:1.5">
+                <li><b>Display name</b> is shown to staff (e.g., “Academic”).</li>
+                <li>You can later edit the department’s name or slug from the table.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Departments -->
+      <section id="sec-depts" class="card section hidden">
+        <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:6px">
+          <h2 class="title" style="margin:0">Existing departments</h2>
+          <button class="btn btn-ghost btn-sm" id="refreshBtn">Refresh</button>
+        </div>
+
+        <div id="empty" class="muted" style="display:none;margin:10px 0">No departments yet.</div>
+
+        <table id="table">
+          <thead>
+          <tr>
+            <th style="width:80px">ID</th>
+            <th>Slug</th>
+            <th style="width:36%">Display name</th>
+            <th style="width:120px">Staff count</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </section>
+
+      <!-- Staff -->
+      <section id="sec-staff" class="card section hidden">
+        <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:6px">
+          <h2 class="title" style="margin:0">Department staff</h2>
+          <button class="btn btn-ghost btn-sm" id="refreshStaffBtn">Refresh</button>
+        </div>
+
+        <div id="staffEmpty" class="muted" style="display:none;margin:10px 0">No department staff yet.</div>
+
+        <table id="staffTable">
+          <thead>
+          <tr>
+            <th style="width:80px">ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th style="width:40%">Actions</th>
+          </tr>
+          </thead>
+          <tbody id="staffBody"></tbody>
+        </table>
+      </section>
+
+      <!-- Compose -->
+      <section id="sec-compose" class="card section hidden">
+        <div class="toolbar">
+          <h2 class="title">Compose Email</h2>
+          <div class="chip">Emails deliver internally; replies appear in Inbox.</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="stack">
+            <div>
+              <label for="m_scope">Recipient scope</label>
+              <select id="m_scope">
+                <option value="users" selected>Users</option>
+                <option value="staff">All staff</option>
+                <option value="admin">Admins (self)</option>
+                <option value="custom">Custom email…</option>
+              </select>
+              <div class="muted" id="m_hint" style="margin-top:6px">Select a recipient from the list.</div>
+            </div>
+
+            <div id="m_picker_wrap">
+              <label for="m_to">Recipient</label>
+              <select id="m_to"></select>
+            </div>
+
+            <div id="m_custom_wrap" class="hidden">
+              <label for="m_custom">Custom recipient email</label>
+              <input id="m_custom" type="email" placeholder="name@example.com"/>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div>
+              <label for="m_subject">Subject</label>
+              <input id="m_subject" placeholder="Subject…"/>
+            </div>
+            <div>
+              <label for="m_body">Body</label>
+              <textarea id="m_body" placeholder="Type your message…"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primary" id="m_send">Send Email</button>
+              <button class="btn btn-outline" id="m_clear" type="button">Clear</button>
+              <span class="muted" id="m_msg" style="margin-left:6px"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Inbox -->
+      <section id="sec-inbox" class="card section hidden">
+        <div class="toolbar">
+          <h2 class="title">Inbox</h2>
+          <div class="mlist-tools">
+            <div class="seg" role="tablist" aria-label="Filter">
+              <button type="button" class="active" data-filter="all">All</button>
+              <button type="button" data-filter="unread">Unread</button>
+            </div>
+            <select id="mailSort" title="Sort">
+              <option value="new">Newest first</option>
+              <option value="old">Oldest first</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="mailReload" title="Refresh">Refresh</button>
+          </div>
+        </div>
+
+        <div class="mail-shell">
+          <!-- List -->
+          <div class="mail-list">
+            <div class="mlist-hdr">
+              <div class="mlist-actions">
+                <input type="checkbox" id="selectAll"/> <label class="muted" for="selectAll">Select all</label>
+                <button class="btn btn-ghost btn-sm" id="bulkRead" title="Mark selected read">Mark read</button>
+                <button class="btn btn-danger btn-sm" id="bulkDelete" title="Delete selected">Delete</button>
+              </div>
+              <div class="muted"><span id="inboxCount">0</span> items</div>
+            </div>
+            <div id="mailItems">
+              <div class="mail-item skeleton">
+                <div class="avatar"></div>
+                <div>
+                  <div style="height:12px;margin:4px 0;width:60%" class="skeleton"></div>
+                  <div style="height:10px;margin:4px 0;width:90%" class="skeleton"></div>
+                </div>
+                <div style="width:58px;height:10px" class="skeleton"></div>
+              </div>
+              <div class="mail-item skeleton">
+                <div class="avatar"></div>
+                <div>
+                  <div style="height:12px;margin:4px 0;width:50%" class="skeleton"></div>
+                  <div style="height:10px;margin:4px 0;width:80%" class="skeleton"></div>
+                </div>
+                <div style="width:58px;height:10px" class="skeleton"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resizer -->
+          <div class="resizer" aria-hidden="true"></div>
+
+          <!-- View -->
+          <div class="mail-view">
+            <div class="mail-head">
+              <div>
+                <div class="muted">From</div>
+                <div id="viewFrom" class="mono">—</div>
+                <div class="muted" style="margin-top:6px">To</div>
+                <div id="viewTo" class="mono" style="color:#475569">—</div>
+              </div>
+              <div style="text-align:right">
+                <div id="viewWhen" class="muted">—</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
+                  <span id="viewBadges" class="badge hidden">Unread</span>
+                  <button class="btn btn-ghost btn-sm" id="actRead">Mark read</button>
+                  <button class="btn btn-danger btn-sm" id="actTrash">Delete</button>
+                </div>
+              </div>
+            </div>
+            <div class="mail-subj">
+              <div class="muted" style="font-weight:600; font-size:12px; margin-bottom:6px">Subject</div>
+              <div id="viewSubj">—</div>
+            </div>
+            <div id="viewBody" class="mail-body">Select an email from the list to view its contents.</div>
+
+            <div class="reply">
+              <div class="muted">Quick reply</div>
+              <div class="grid-2">
+                <input id="replyTo" placeholder="To" disabled/>
+                <input id="replySubj" placeholder="Subject"/>
+              </div>
+              <textarea id="replyBody" placeholder="Write your reply…"></textarea>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+                <button class="btn btn-primary" id="replySend">Send Reply</button>
+                <span class="muted">Shortcuts: <span class="chip">R = reply</span> <span class="chip">M = mark read</span> <span class="chip">⌫ = delete</span> <span class="chip">↑/↓ = navigate</span></span>
+                <span class="muted" id="replyMsg" style="margin-left:auto"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sent -->
+      <section id="sec-sent" class="card section hidden">
+        <div class="toolbar">
+          <h2 class="title">Sent Mail</h2>
+          <div class="mlist-tools">
+            <select id="sentSort">
+              <option value="new">Newest first</option>
+              <option value="old">Oldest first</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" id="sentReload">Refresh</button>
+          </div>
+        </div>
+
+        <div class="mail-shell" style="grid-template-columns:360px 10px 1fr">
+          <div class="mail-list">
+            <div class="mlist-hdr">
+              <div class="muted">Latest</div>
+              <div class="muted"><span id="sentCount">0</span> items</div>
+            </div>
+            <div id="sentItems"><div class="muted" style="padding:12px">Loading…</div></div>
+          </div>
+
+          <div class="resizer" aria-hidden="true"></div>
+
+          <div class="mail-view">
+            <div class="mail-head">
+              <div>
+                <div class="muted">From</div>
+                <div id="sentFrom" class="mono">—</div>
+                <div class="muted" style="margin-top:6px">To</div>
+                <div id="sentTo" class="mono" style="color:#475569">—</div>
+              </div>
+              <div style="text-align:right">
+                <div id="sentWhen" class="muted">—</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px">
+                  <button class="btn btn-danger btn-sm" id="sentTrash">Delete</button>
+                </div>
+              </div>
+            </div>
+            <div class="mail-subj">
+              <div class="muted" style="font-weight:600; font-size:12px; margin-bottom:6px">Subject</div>
+              <div id="sentSubj" style="font-weight:800">—</div>
+            </div>
+            <div id="sentBody" class="mail-body">Select a sent mail on the left.</div>
+
+            <div class="reply">
+              <div class="muted">Quick message</div>
+              <div class="grid-2">
+                <input id="sentReplyTo" placeholder="To" disabled/>
+                <input id="sentReplySubj" placeholder="Subject"/>
+              </div>
+              <textarea id="sentReplyBody" placeholder="Write your message…"></textarea>
+              <div style="display:flex; gap:8px; align-items:center">
+                <button class="btn btn-primary" id="sentReplySend">Send</button>
+                <span class="muted" id="sentReplyMsg"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Trash -->
+      <section id="sec-trash" class="card section hidden">
+        <div class="toolbar">
+          <h2 class="title">Deleted Mail</h2>
+          <button class="btn btn-ghost btn-sm" id="trashReload">Refresh</button>
+        </div>
+        <div class="muted" style="margin-bottom:10px">
+          Heads-up: a message is permanently removed only when <b>both parties</b> delete it. Otherwise it stays here until the other side deletes it too.
+        </div>
+        <div id="trashList" class="stack"><div class="muted">Loading…</div></div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="ftr">
+      <div>&copy; <span id="year"></span> Dropout Predictor</div>
+      <nav style="display:flex;gap:14px"></nav>
+    </div>
+  </footer>
+
+<script>
+/* ---------- Utilities & boot guards ---------- */
+const byId = id => document.getElementById(id);
+const $ = (s,ctx=document)=>ctx.querySelector(s);
+const $$ = (s,ctx=document)=>Array.from(ctx.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = d => d ? new Date(d).toLocaleString() : '—';
+const timeAgo = ts => { if(!ts) return '—'; const d=new Date(ts),diff=(Date.now()-d.getTime())/1000; const t=diff<60?`${Math.floor(diff)}s`:diff<3600?`${Math.floor(diff/60)}m`:diff<86400?`${Math.floor(diff/3600)}h`:`${Math.floor(diff/86400)}d`; return t+' ago' };
+document.getElementById("year").textContent = new Date().getFullYear();
+let ME = null;
+
+function on(id, ev, fn){ const el = byId(id); if(el) el.addEventListener(ev, fn); }
+
+/* Include cookies for session-based auth */
+const FETCH_OPTS = { credentials: 'include' };
+
+/* ---------- display ---------- */
+const dig = (obj, path) => path.split('.').reduce((acc, k) => (acc && acc[k] != null ? acc[k] : undefined), obj);
+function val(obj, ...paths) {
+  for (const p of paths) {
+    const v = p.includes('.') ? dig(obj, p) : obj?.[p];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+  }
+  return '';
+}
+function hashColor(str){ let h=0; for(let i=0;i<str.length;i++) h = (h<<5) - h + str.charCodeAt(i) | 0; const r=(h>>0)&255, g=(h>>8)&255, b=(h>>16)&255; return `rgb(${100+(r%120)}, ${100+(g%120)}, ${100+(b%120)})`; }
+function initials(nameOrEmail){
+  const s = String(nameOrEmail||'').trim(); if(!s) return '•';
+  const parts = s.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+  return (parts[0][0]+parts[1][0]).toUpperCase();
+}
+
+/* ---------- Aside toggle (mobile) ---------- */
+const asideToggle = byId('asideToggle');
+asideToggle?.addEventListener('click', () => {
+  const open = document.body.classList.toggle('aside-open');
+  asideToggle.setAttribute('aria-expanded', String(open));
+});
+
+/* ---------- Section switching ---------- */
+const nav = byId('leftNav');
+const sections = {
+  'sec-create': byId('sec-create'),
+  'sec-depts': byId('sec-depts'),
+  'sec-staff': byId('sec-staff'),
+  'sec-compose': byId('sec-compose'),
+  'sec-inbox': byId('sec-inbox'),
+  'sec-sent': byId('sec-sent'),
+  'sec-trash': byId('sec-trash'),
+};
+function showSection(id){
+  Object.entries(sections).forEach(([k, el]) => el.classList.toggle('hidden', k !== id));
+  nav.querySelectorAll('a').forEach(a => a.classList.toggle('active', a.dataset.target === id));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (document.body.classList.contains('aside-open')) { document.body.classList.remove('aside-open'); asideToggle?.setAttribute('aria-expanded','false'); }
+  if (id === 'sec-inbox') { markInboxSeen(INBOX_LAST_MAX_ID); updateInboxBadgeUI(LAST_UNREAD_COUNT); }
+  localStorage.setItem('admin_last_section', id);
+}
+nav.addEventListener('click', (e)=>{
+  const a = e.target.closest('a[data-target]'); if (!a) return;
+  e.preventDefault(); showSection(a.dataset.target);
+});
+byId('composeBtn')?.addEventListener('click', ()=>showSection('sec-compose'));
+(function restoreLastSection(){ const last = localStorage.getItem('admin_last_section'); if(last && sections[last]) showSection(last); else showSection('sec-create'); })();
+
+/* ---------- Auth and whoami ---------- */
+async function loadMe(){
+  try {
+    const r = await fetch('/api/admin/me', { ...FETCH_OPTS });
+    if (!r.ok) {
+      // If not logged in, go to admin login
+      if (r.status === 401 || r.status === 403) { window.location.href = '/admin-login.html?next=' + encodeURIComponent(location.pathname); return; }
+      byId('whoami').textContent = 'unauthenticated'; return;
+    }
+    const me = await r.json(); ME = me;
+    byId('whoami').textContent = `${me.name || 'Admin'} • ${(me.department || 'Administration')}`;
+  } catch (e) {
+    byId('whoami').textContent = 'error';
+  }
+}
+
+/* ---------- Departments and Staff ---------- */
+const slugSel   = byId('slug');
+const deptName  = byId('deptName');
+const staffName = byId('staffName');
+const emailInp  = byId('email');
+const passInp   = byId('password');
+const createMsg = byId('createMsg');
+
+const tbody = byId('tbody'); const empty = byId('empty');
+const staffBody = byId('staffBody'); const staffEmpty = byId('staffEmpty');
+
+async function createDept() {
+  const slug = (slugSel?.value || '').trim();
+  const dName = (deptName?.value || '').trim();
+  const sName = (staffName?.value || '').trim();
+  const email = (emailInp?.value || '').trim();
+  const password = (passInp?.value || '').trim();
+
+  if (!slug) return (createMsg.textContent = 'Pick a slug');
+  if (!email || !password) return (createMsg.textContent = 'Email & password required');
+
+  createMsg.textContent = 'Creating…';
+
+  const depRes = await fetch('/api/admin/departments', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ slug, name: dName || slug, staff_name: sName || slug, staff_email: email, staff_password: password }),
+    ...FETCH_OPTS
+  });
+
+  if (!depRes.ok) {
+    const t = await depRes.text(); createMsg.textContent = `Failed: ${t}`; return;
+  }
+
+  createMsg.textContent = 'Created ✓';
+  deptName.value = ''; staffName.value = ''; slugSel.value = ''; emailInp.value = ''; passInp.value = '';
+  await listDepts(); await listStaff(); showSection('sec-depts');
+}
+on('createBtn','click', createDept);
+
+async function listDepts() {
+  tbody.innerHTML = `<tr><td colspan="5" class="muted">Loading…</td></tr>`;
+  try {
+    const res = await fetch('/api/admin/departments', { ...FETCH_OPTS });
+    if (!res.ok) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">Failed to load (${res.status})</td></tr>`;
+      empty.style.display = 'none'; return;
+    }
+    const rows = await res.json();
+    if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none'; tbody.innerHTML = '';
+    for (const d of rows) {
+      const tr = document.createElement('tr'); tr.className = 'row';
+      const safeName = esc(d.name || ''); const safeSlug = esc(d.slug || '');
+      tr.innerHTML = `
+        <td>#${d.id}</td>
+        <td>
+          <input class="mono slugEdit" data-id="${d.id}" value="${safeSlug}" />
+          <div class="muted">Slug must be one of academic, finance, mental_health</div>
+        </td>
+        <td>
+          <input class="nameEdit" data-id="${d.id}" value="${safeName}" />
+          <div class="muted">Shown on staff UIs (e.g., “Academic”)</div>
+        </td>
+        <td><span class="pill">${d.staff_count ?? 0} staff</span></td>
+        <td class="tools">
+          <button class="btn btn-ok btn-sm" data-action="save" data-id="${d.id}">Save</button>
+          <button class="btn btn-danger btn-sm" data-action="del" data-id="${d.id}">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+    }
+    wireDeptButtons();
+  } catch {
+    tbody.innerHTML = `<tr><td colspan="5" class="muted">Error loading</td></tr>`;
+  }
+}
+on('refreshBtn','click', listDepts);
+
+function wireDeptButtons() {
+  tbody.querySelectorAll('button[data-action="save"]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const nameInp = tbody.querySelector(`input.nameEdit[data-id="${id}"]`);
+      const slugInp = tbody.querySelector(`input.slugEdit[data-id="${id}"]`);
+      const newName = (nameInp?.value || '').trim();
+      const newSlug = (slugInp?.value || '').trim();
+      if (!newSlug) return alert('Slug cannot be empty');
+
+      btn.disabled = true;
+      const upd = await fetch(`/api/admin/departments/${id}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ slug: newSlug, name: newName }),
+        ...FETCH_OPTS
+      });
+      btn.disabled = false;
+      if (!upd.ok) { const t = await upd.text(); return alert('Update failed: ' + t); }
+      await listDepts();
+    });
+  });
+
+  tbody.querySelectorAll('button[data-action="del"]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      if (!confirm('Delete this department? This will cascade linked staff.')) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/departments/${id}`, { method:'DELETE', ...FETCH_OPTS });
+      btn.disabled = false;
+      if (!res.ok) return alert('Delete failed');
+      await listDepts(); await listStaff();
+    });
+  });
+}
+
+async function listStaff() {
+  staffBody.innerHTML = `<tr><td colspan="5" class="muted">Loading…</td></tr>`;
+  try {
+    const res = await fetch('/api/admin/staff', { ...FETCH_OPTS });
+    if (!res.ok) {
+      staffBody.innerHTML = `<tr><td colspan="5" class="muted">Failed to load (${res.status})</td></tr>`;
+      staffEmpty.style.display = 'none'; return;
+    }
+    const rows = await res.json();
+    if (!rows.length) { staffBody.innerHTML = ''; staffEmpty.style.display = 'block'; return; }
+    staffEmpty.style.display = 'none'; staffBody.innerHTML = '';
+    for (const s of rows) {
+      const depLabel = s.department && (s.department.name || s.department.slug) || '';
+      const tr = document.createElement('tr'); tr.className = 'row';
+      tr.innerHTML = `
+        <td>#${s.id}</td>
+        <td>${esc(s.name || '')}</td>
+        <td class="mono">${esc(s.email || '')}</td>
+        <td><span class="pill">${esc(depLabel)}</span></td>
+        <td class="tools">
+          <input class="mono" style="width:200px" placeholder="new password" data-id="${s.id}" />
+          <button class="btn btn-ghost btn-sm" data-action="reset" data-id="${s.id}">Reset Password</button>
+          <button class="btn btn-danger btn-sm" data-action="remove" data-id="${s.id}">Remove</button>
+        </td>`;
+      staffBody.appendChild(tr);
+    }
+    wireStaffButtons();
+  } catch {
+    staffBody.innerHTML = `<tr><td colspan="5" class="muted">Error loading</td></tr>`;
+  }
+}
+on('refreshStaffBtn','click', listStaff);
+
+function wireStaffButtons() {
+  staffBody.querySelectorAll('button[data-action="reset"]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      const inp = staffBody.querySelector(`input[data-id="${id}"]`);
+      const pw = (inp?.value || '').trim();
+      if (!pw) return alert('Enter a new password first');
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/staff/${id}`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: pw }), ...FETCH_OPTS
+      });
+      btn.disabled = false;
+      if (!res.ok) return alert('Reset failed');
+      inp.value = ''; alert('Password updated');
+    });
+  });
+
+  staffBody.querySelectorAll('button[data-action="remove"]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.id;
+      if (!confirm('Remove this staff account?')) return;
+      btn.disabled = true;
+      const res = await fetch(`/api/admin/staff/${id}`, { method:'DELETE', ...FETCH_OPTS });
+      btn.disabled = false;
+      if (!res.ok) return alert('Delete failed');
+      await listStaff();
+    });
+  });
+}
+
+/* ---------- Email (compose/list) ---------- */
+let USERS=[], STAFF=[], ADMINS=[];
+function prettifyDept(d){ return d ? (d.name || d.slug || '') : ''; }
+
+async function loadUsersForCompose(){
+  try{
+    const r=await fetch('/api/admin/users', { ...FETCH_OPTS });
+    USERS = r.ok ? await r.json() : [];
+    if($('#m_scope')?.value==='users') buildRecipientOptions();
+  }catch{ USERS=[]; }
+}
+async function loadStaffForCompose(){
+  try{
+    const r=await fetch('/api/admin/staff', { ...FETCH_OPTS });
+    STAFF = r.ok ? await r.json() : [];
+    if($('#m_scope')?.value==='staff') buildRecipientOptions();
+  }catch{ STAFF=[]; }
+}
+async function loadAdminsForCompose(){
+  try{
+    const r=await fetch('/api/admin/me', { ...FETCH_OPTS });
+    if(!r.ok){ ADMINS=[]; return; }
+    const me=await r.json();
+    ADMINS = [{name: me.name||'Admin', email: me.email}];
+    if($('#m_scope')?.value==='admin') buildRecipientOptions();
+  }catch{ ADMINS=[]; }
+}
+
+function buildRecipientOptions(){
+  const scope=$('#m_scope')?.value, to=$('#m_to'), hint=$('#m_hint');
+  if(!scope||!to||!hint) return;
+  $('#m_picker_wrap')?.classList.toggle('hidden', scope==='custom');
+  $('#m_custom_wrap')?.classList.toggle('hidden', scope!=='custom');
+  to.innerHTML='';
+  let list=[];
+  if(scope==='users'){
+    list=(USERS||[]).map(u=>({email:u.email,label:`${u.name||'(no name)'} <${u.email||''}>`}));
+    hint.textContent='Select a registered user.';
+  }else if(scope==='staff'){
+    list=(STAFF||[]).map(s=>({email:s.email,label:`${s.name||'(no name)'} <${s.email||''}> — ${prettifyDept(s.department)}`}));
+    hint.textContent=list.length?'Select a staff contact.':'No staff contacts available.';
+  }else if(scope==='admin'){
+    list=(ADMINS||[]).map(a=>({email:a.email,label:`${a.name||'Admin'} <${a.email||''}>`}));
+    hint.textContent='Send to an admin (you).';
+  }else{
+    hint.textContent='Enter any email address.'; return;
+  }
+  list.filter(x=>x.email).sort((a,b)=>(a.label||'').localeCompare(b.label||'')).forEach(x=>{
+    const o=document.createElement('option'); o.value=x.email; o.textContent=x.label; to.appendChild(o);
+  });
+  if(!to.options.length){ const o=document.createElement('option'); o.value=''; o.textContent='(no recipients found)'; to.appendChild(o); }
+}
+on('m_scope','change', buildRecipientOptions);
+on('m_clear','click', ()=>{
+  $('#m_subject').value=''; $('#m_body').value='';
+  if($('#m_scope').value==='custom') $('#m_custom').value='';
+  $('#m_msg').textContent='';
+});
+
+async function sendEmail(to,subject,body){
+  const payload={ to, subject, body };
+  const r=await fetch('/api/emails',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload), ...FETCH_OPTS});
+  let d=null; try{ d=await r.json(); }catch{}
+  if(!r.ok || d?.ok===false) throw new Error(d?.error||r.status);
+  return d;
+}
+on('m_send','click', async ()=>{
+  const msg=$('#m_msg'); if(!msg) return; msg.textContent='';
+  const scope=$('#m_scope')?.value||'users';
+  const subject=($('#m_subject')?.value||'').trim()||'Message';
+  const body=($('#m_body')?.value||'').trim();
+  let to='';
+  if(scope==='custom'){ to=($('#m_custom')?.value||'').trim(); }
+  else { to=($('#m_to')?.value||'').trim(); }
+  if(!body){ msg.textContent='Message body is required.'; return; }
+  if(!to){ msg.textContent='Choose/enter a recipient.'; return; }
+  try{
+    await sendEmail(to,subject,body);
+    msg.textContent='Email sent.';
+    $('#m_subject').value=''; $('#m_body').value=''; if(scope==='custom') $('#m_custom').value='';
+    await loadMail('inbox'); await loadSent();
+  }catch(e){ msg.textContent='Failed: '+e.message; }
+});
+
+/* ---------- Inbox / Sent / Trash ---------- */
+async function actDelete(id){ const r=await fetch(`/api/emails/${id}`, {method:'DELETE', ...FETCH_OPTS}); let d=null; try{ d=await r.json(); }catch{}; if(!r.ok) throw new Error(d?.error||r.status); return d; }
+async function actRestore(id){ const r=await fetch(`/api/emails/${id}/restore`, {method:'PUT', ...FETCH_OPTS}); let d=null; try{ d=await r.json(); }catch{}; if(!r.ok) throw new Error(d?.error||r.status); return d; }
+async function actRead(id){ const r=await fetch(`/api/emails/${id}/read`, {method:'PUT', ...FETCH_OPTS}); if(!r.ok){ try{ const d=await r.json(); throw new Error(d?.error||r.status) } catch{} } }
+
+const STATE={folder:'inbox', list:[], selected:null};
+let INBOX_LAST_MAX_ID = 0;
+let LAST_UNREAD_COUNT = 0;
+let POLL_TIMER = null;
+function badgeEl(){ return byId('inboxBadge'); }
+function inboxLink(){ return byId('navInbox'); }
+function lastSeenKey(){ return `inbox_last_seen_${(ME?.email||'').toLowerCase()}`; }
+function getLastSeenId(){ return Number(localStorage.getItem(lastSeenKey())||0); }
+function setLastSeenId(id){ localStorage.setItem(lastSeenKey(), String(id||0)); }
+function computeUnreadAndMax(list){
+  let unread=0, maxId=0; for(const m of list){ if(!m.read) unread++; if(Number(m.id)>maxId) maxId = Number(m.id); } return { unread, maxId };
+}
+function updateInboxBadgeUI(unread){
+  LAST_UNREAD_COUNT = unread;
+  const b = badgeEl(); const link = inboxLink();
+  if (unread>0){ b.style.display='inline-block'; b.textContent = String(unread); }
+  else { b.style.display='none'; b.textContent = '0'; }
+  if (INBOX_LAST_MAX_ID > getLastSeenId() && unread>0) link.classList.add('notify-pulse');
+  else link.classList.remove('notify-pulse');
+}
+function markInboxSeen(latestId){ if(latestId) setLastSeenId(latestId); inboxLink().classList.remove('notify-pulse'); }
+async function pollInbox(){
+  try{
+    const r = await fetch('/api/emails?box=inbox&limit=200', { ...FETCH_OPTS });
+    if(!r.ok) return;
+    const data = await r.json(); if(!Array.isArray(data)) return;
+    const {unread, maxId} = computeUnreadAndMax(data);
+    INBOX_LAST_MAX_ID = Math.max(INBOX_LAST_MAX_ID, maxId);
+    updateInboxBadgeUI(unread);
+  }catch{}
+}
+function startPolling(){ stopPolling(); pollInbox(); POLL_TIMER = setInterval(()=>{ if(!document.hidden) pollInbox(); }, 20000); }
+function stopPolling(){ if(POLL_TIMER){ clearInterval(POLL_TIMER); POLL_TIMER=null; } }
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopPolling(); else startPolling(); });
+
+function renderWho(item, isSent){
+  const name = isSent ? val(item,'to.name','recipient.name','peer.name') : val(item,'from.name','sender.name','peer.name');
+  const email = isSent ? val(item,'to.email','to_email','recipient.email','recipient','peer.email','peer_email','to')
+                       : val(item,'from.email','from_email','sender.email','sender','peer.email','peer_email','from');
+  if (name && email) return `${name} <${email}>`;
+  if (email) return String(email);
+  if (name) return String(name);
+  return '(unknown)';
+}
+function renderSubject(item){ return val(item,'subject','subj','title','topic') || '(no subject)'; }
+function renderSnippet(item){ return (String(item.body||'').replace(/\s+/g,' ').slice(0,100) + (String(item.body||'').length>100?'…':'')) || ''; }
+function renderCreated(item){ const ts = val(item,'created_at','createdAt','timestamp','time'); return ts ? timeAgo(ts) : ''; }
+
+function listRow(m){
+  const who = renderWho(m, STATE.folder==='sent'); const subj = renderSubject(m); const snip = renderSnippet(m); const created = renderCreated(m);
+  const emailForAvatar = (STATE.folder==='sent') ? (val(m,'to.email','to_email','to')||who) : (val(m,'from.email','from_email','from')||who);
+  const bg = hashColor(String(emailForAvatar)); const ini = initials(String(who||emailForAvatar));
+  return `<div class="mail-item" data-id="${m.id}">
+    <div class="avatar" style="background:${bg}" aria-hidden="true">${esc(ini)}</div>
+    <div style="min-width:0">
+      <div style="display:flex; align-items:center; gap:8px; min-width:0">
+        <span class="who" title="${esc(who)}">${esc(who)}</span>
+        ${m.read ? '' : '<span class="badge">Unread</span>'}
+      </div>
+      <div class="sub" title="${esc(subj)}">${esc(subj)}</div>
+      <div class="snippet">${esc(snip)}</div>
+    </div>
+    <div class="meta">
+      <span>${created}</span><span class="status-dot ${m.read?'read':''}"></span>
+      <input type="checkbox" class="rowSel" data-id="${m.id}" title="Select"/>
+    </div>
+  </div>`;
+}
+
+function paintList(){
+  const q = ($('#mailSearch')?.value||'').toLowerCase();
+  const filter = $('.seg button.active')?.dataset.filter || 'all';
+  const sort = $('#mailSort')?.value||'new';
+  let items = STATE.list.slice();
+
+  if(filter==='unread') items = items.filter(m=>!m.read);
+  if(q){
+    items = items.filter(m =>
+      renderSubject(m).toLowerCase().includes(q) ||
+      (String(m.body||'').toLowerCase().includes(q)) ||
+      renderWho(m,false).toLowerCase().includes(q) ||
+      renderWho(m,true).toLowerCase().includes(q)
+    );
+  }
+  items.sort((a,b)=>{
+    const ta = new Date(val(a,'created_at','createdAt','timestamp','time')).getTime()||0;
+    const tb = new Date(val(b,'created_at','createdAt','timestamp','time')).getTime()||0;
+    return sort==='new' ? (tb-ta) : (ta-tb);
+  });
+
+  byId('inboxCount').textContent = String(items.length);
+  byId('mailItems').innerHTML = items.length ? items.map(listRow).join('') : '<div class="muted" style="padding:16px">No emails match your filters.</div>';
+  if(STATE.selected){ const el = document.querySelector(`#mailItems .mail-item[data-id="${STATE.selected}"]`); if(el) el.classList.add('active'); }
+  byId('selectAll').checked = false;
+}
+
+async function hydrateListIfNeeded(list){
+  const sample = list.find(Boolean);
+  const missing = sample && !val(sample,'subject') && !val(sample,'from.email','from_email','sender.email','from','peer.email','peer_email');
+  if(!missing) return list;
+
+  const hydrated = await Promise.all(list.map(async (m)=>{
+    try{
+      const r = await fetch(`/api/emails/${m.id}`, { ...FETCH_OPTS });
+      if(r.ok){ const d = await r.json(); return Object.assign({}, m, d); }
+    }catch{}
+    return m;
+  }));
+  return hydrated;
+}
+
+async function loadMail(folder='inbox'){
+  STATE.folder = folder;
+  byId('mailItems').innerHTML = '<div class="muted" style="padding:12px">Loading…</div>';
+  try{
+    const r = await fetch(`/api/emails?box=inbox`, { ...FETCH_OPTS });
+    if(!r.ok){ byId('mailItems').innerHTML='<div class="muted" style="padding:12px">Mail API not available.</div>'; return; }
+    let data = await r.json();
+    data = Array.isArray(data)?data:[];
+    data = await hydrateListIfNeeded(data);
+    STATE.list = data;
+
+    const {unread, maxId} = computeUnreadAndMax(STATE.list);
+    INBOX_LAST_MAX_ID = Math.max(INBOX_LAST_MAX_ID, maxId);
+    updateInboxBadgeUI(unread);
+
+    paintList();
+    if(STATE.list.length){ selectMail(STATE.list[0].id, false); } else { clearView(); }
+  }catch(e){ byId('mailItems').innerHTML = `<div class="muted" style="padding:12px">Error: ${esc(e.message)}</div>`; }
+}
+
+/* search debounce */
+function debounce(fn, ms){ let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
+const debPaint = debounce(paintList, 160);
+on('mailReload','click', ()=>loadMail('inbox'));
+byId('mailSearch')?.addEventListener('input', debPaint);
+on('mailSort','change', paintList);
+
+byId('mailItems')?.addEventListener('click', e=>{
+  const row=e.target.closest('.mail-item'); if(!row) return; selectMail(row.dataset.id, true);
+});
+byId('mailItems')?.addEventListener('click', e=>{ if(e.target.matches('.rowSel')) e.stopPropagation(); });
+on('selectAll','change', e=>{ const on = e.target.checked; $$('#mailItems .rowSel').forEach(cb=>cb.checked = on); });
+on('bulkRead','click', async ()=>{
+  const ids = $$('#mailItems .rowSel:checked').map(cb=>cb.dataset.id);
+  if(!ids.length) return;
+  for(const id of ids){ try{ await actRead(id);}catch{} }
+  await loadMail('inbox'); pollInbox();
+});
+on('bulkDelete','click', async ()=>{
+  const ids = $$('#mailItems .rowSel:checked').map(cb=>cb.dataset.id);
+  if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} selected message(s)?`)) return;
+  for(const id of ids){ try{ await actDelete(id);}catch{} }
+  await Promise.all([loadMail('inbox'), loadTrash()]); pollInbox();
+});
+
+function clearView(){
+  STATE.selected=null;
+  byId('viewFrom').textContent='—'; byId('viewTo').textContent='—'; byId('viewWhen').textContent='—';
+  byId('viewSubj').textContent='—'; byId('viewBody').textContent='Select an email from the list to view its contents.';
+  byId('replyTo').value=''; byId('replySubj').value=''; byId('replyBody').value=''; byId('replyMsg').textContent='';
+  byId('viewBadges').classList.add('hidden');
+}
+
+async function selectMail(id, markAsSeen){
+  STATE.selected=id;
+  $$('#mailItems .mail-item').forEach(x=>x.classList.toggle('active', x.dataset.id==id));
+  try{
+    const r=await fetch(`/api/emails/${id}`, { ...FETCH_OPTS }); const m=await r.json(); if(!r.ok) throw new Error(m?.error||r.status);
+    const from = val(m,'from.email','from_email','from') || '';
+    const to   = val(m,'to.email','to_email','to') || '';
+    byId('viewFrom').textContent = from;
+    byId('viewTo').textContent   = to;
+    byId('viewWhen').textContent = fmt(val(m,'created_at','createdAt','timestamp','time'));
+    byId('viewSubj').textContent = renderSubject(m);
+    byId('viewBody').textContent = m.body || '';
+
+    const my = (ME?.email||'').toLowerCase();
+    const replyTo = (String(to).toLowerCase()===my) ? from : to;
+    byId('replyTo').value = replyTo || '';
+    const subj = renderSubject(m);
+    byId('replySubj').value = subj.startsWith('Re:') ? subj : `Re: ${subj}`;
+    byId('replyBody').value = '';
+    byId('replyMsg').textContent = '';
+    byId('viewBadges').classList.toggle('hidden', !!m.read);
+
+    if(markAsSeen && !m.read){ try{ await actRead(id); }catch{} pollInbox(); }
+  }catch(err){ alert('Open failed: '+err.message); }
+}
+on('actTrash','click', async ()=>{
+  if(!STATE.selected) return;
+  try{ await actDelete(STATE.selected); await loadMail('inbox'); await loadTrash(); pollInbox(); }
+  catch(err){ alert('Delete failed: '+err.message); }
+});
+on('actRead','click', async ()=>{
+  if(!STATE.selected) return;
+  try{ await actRead(STATE.selected); await loadMail('inbox'); pollInbox(); }catch{}
+});
+on('replySend','click', async ()=>{
+  const to=byId('replyTo').value.trim(), subject=(byId('replySubj').value||'').trim()||'Re:', body=(byId('replyBody').value||'').trim(); const msg=byId('replyMsg');
+  if(!to||!body){ msg.textContent='Recipient and body required.'; return; }
+  try{ await sendEmail(to,subject,body); msg.textContent='Reply sent.'; byId('replyBody').value=''; await loadSent(); }
+  catch(err){ msg.textContent='Failed: '+err.message; }
+});
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', (e)=>{
+  if(sections['sec-inbox'].classList.contains('hidden')) return;
+  if(e.target.matches('input,textarea')) return;
+  const idx = STATE.list.findIndex(x=> String(x.id)===String(STATE.selected));
+  if(e.key==='ArrowDown'){ const next = STATE.list[Math.min(idx+1, STATE.list.length-1)]; if(next){ selectMail(next.id, true); scrollIntoViewIfNeeded(next.id); } }
+  if(e.key==='ArrowUp'){ const prev = STATE.list[Math.max(idx-1, 0)]; if(prev){ selectMail(prev.id, true); scrollIntoViewIfNeeded(prev.id); } }
+  if(e.key.toLowerCase()==='r'){ e.preventDefault(); byId('replyBody').focus(); }
+  if(e.key.toLowerCase()==='m'){ e.preventDefault(); byId('actRead').click(); }
+  if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); byId('actTrash').click(); }
+});
+function scrollIntoViewIfNeeded(id){
+  const row = $(`#mailItems .mail-item[data-id="${id}"]`); if(!row) return;
+  const cont = byId('mailItems'); const r = row.getBoundingClientRect(), c = cont.getBoundingClientRect();
+  if(r.top < c.top) row.scrollIntoView(true); if(r.bottom > c.bottom) row.scrollIntoView(false);
+}
+
+/* Sent */
+const SENT={list:[], selected:null};
+function sentRow(m){
+  const who = renderWho(m,true); const subj = renderSubject(m); const snip = renderSnippet(m); const created = renderCreated(m);
+  const emailForAvatar = val(m,'to.email','to_email','to')||who; const bg = hashColor(String(emailForAvatar)); const ini = initials(String(who||emailForAvatar));
+  return `<div class="mail-item" data-id="${m.id}">
+    <div class="avatar" style="background:${bg}">${esc(ini)}</div>
+    <div style="min-width:0">
+      <div class="who" title="${esc(who)}">${esc(who)}</div>
+      <div class="sub" title="${esc(subj)}">${esc(subj)}</div>
+      <div class="snippet">${esc(snip)}</div>
+    </div>
+    <div class="meta"><span>${created}</span><span class="status-dot read"></span><input type="checkbox" class="rowSel" data-id="${m.id}" title="Select"/></div>
+  </div>`;
+}
+function paintSent(){
+  const q = ($('#mailSearch')?.value||'').toLowerCase();
+  const sort = $('#sentSort')?.value||'new';
+  let items = SENT.list.slice();
+  if(q){
+    items = items.filter(m =>
+      renderSubject(m).toLowerCase().includes(q) ||
+      (String(m.body||'').toLowerCase().includes(q)) ||
+      renderWho(m,true).toLowerCase().includes(q)
+    );
+  }
+  items.sort((a,b)=>{
+    const ta = new Date(val(a,'created_at','createdAt','timestamp','time')).getTime()||0;
+    const tb = new Date(val(b,'created_at','createdAt','timestamp','time')).getTime()||0;
+    return sort==='new' ? (tb-ta) : (ta-tb);
+  });
+  byId('sentCount').textContent = String(items.length);
+  byId('sentItems').innerHTML = items.length ? items.map(sentRow).join('') : '<div class="muted" style="padding:12px">No sent emails.</div>';
+  if(SENT.selected){ const el = document.querySelector(`#sentItems .mail-item[data-id="${SENT.selected}"]`); if(el) el.classList.add('active'); }
+}
+async function loadSent(){
+  byId('sentItems').innerHTML = '<div class="muted" style="padding:12px">Loading…</div>';
+  try{
+    const r = await fetch('/api/emails?box=sent', { ...FETCH_OPTS });
+    if(!r.ok){ byId('sentItems').innerHTML='<div class="muted" style="padding:12px">Mail API not available.</div>'; return; }
+    let data = await r.json();
+    data = Array.isArray(data)?data:[];
+    data = await hydrateListIfNeeded(data);
+    SENT.list = data;
+    paintSent();
+    if(SENT.list.length){ openSent(SENT.list[0].id); } else { clearSentView(); }
+  }catch(e){ byId('sentItems').innerHTML = `<div class="muted" style="padding:12px">Error: ${esc(e.message)}</div>`; }
+}
+function clearSentView(){
+  SENT.selected=null;
+  byId('sentFrom').textContent='—'; byId('sentTo').textContent='—'; byId('sentWhen').textContent='—'; byId('sentSubj').textContent='—'; byId('sentBody').textContent='Select a sent mail on the left.';
+  byId('sentReplyTo').value=''; byId('sentReplySubj').value=''; byId('sentReplyBody').value=''; byId('sentReplyMsg').textContent='';
+}
+async function openSent(id){
+  SENT.selected=id;
+  $$('#sentItems .mail-item').forEach(x=>x.classList.toggle('active', x.dataset.id==id));
+  try{
+    const r=await fetch(`/api/emails/${id}`, { ...FETCH_OPTS }); const m=await r.json(); if(!r.ok) throw new Error(m?.error||r.status);
+    const from = val(m,'from.email','from_email','from') || '';
+    const to   = val(m,'to.email','to_email','to') || '';
+    byId('sentFrom').textContent = from;
+    byId('sentTo').textContent   = to;
+    byId('sentWhen').textContent = fmt(val(m,'created_at','createdAt','timestamp','time'));
+    byId('sentSubj').textContent = renderSubject(m);
+    byId('sentBody').textContent = m.body || '';
+    byId('sentReplyTo').value = to || '';
+    const subj = renderSubject(m);
+    byId('sentReplySubj').value = subj.startsWith('Re:') ? subj : `Re: ${subj}`;
+    byId('sentReplyBody').value = '';
+    byId('sentReplyMsg').textContent = '';
+  }catch(err){ alert('Open failed: '+err.message); }
+}
+byId('sentItems')?.addEventListener('click', e=>{ const row=e.target.closest('.mail-item'); if(!row) return; openSent(row.dataset.id); });
+on('sentReload','click', loadSent);
+byId('mailSearch')?.addEventListener('input', debounce(()=>{ paintList(); paintSent(); }, 160));
+on('sentTrash','click', async ()=>{
+  if(!SENT.selected) return;
+  try{ await actDelete(SENT.selected); await loadSent(); await loadTrash(); pollInbox(); }
+  catch(err){ alert('Delete failed: '+err.message); }
+});
+on('sentReplySend','click', async ()=>{
+  const to=byId('sentReplyTo').value.trim(), subject=(byId('sentReplySubj').value||'').trim()||'Re:', body=(byId('sentReplyBody').value||'').trim(); const msg=byId('sentReplyMsg');
+  if(!to||!body){ msg.textContent='Recipient and body required.'; return; }
+  try{ await sendEmail(to,subject,body); msg.textContent='Sent.'; byId('sentReplyBody').value=''; await loadSent(); }
+  catch(err){ msg.textContent='Failed: '+err.message; }
+});
+
+/* Trash */
+function trashRow(m){
+  const from = val(m,'from.email','from_email','from') || '';
+  const to   = val(m,'to.email','to_email','to') || '';
+  return `<div class="row" data-id="${m.id}" style="display:flex; align-items:center; justify-content:space-between; padding:12px">
+    <div style="margin-right:10px">
+      <div class="muted">${esc(from)} → ${esc(to)}</div>
+      <div style="font-weight:800">${esc(renderSubject(m))}</div>
+      <div class="muted">${fmt(val(m,'created_at','createdAt','timestamp','time'))}</div>
+    </div>
+    <div style="display:flex; gap:8px">
+      <button class="btn btn-ghost btn-sm" data-tact="restore">Restore</button>
+      <button class="btn btn-danger btn-sm" data-tact="purge">Delete forever</button>
+    </div>
+  </div>`;
+}
+async function loadTrash(){
+  const list=byId('trashList'); list.innerHTML='<div class="muted">Loading…</div>';
+  try{
+    const r = await fetch('/api/emails?box=trash', { ...FETCH_OPTS });
+    if(!r.ok){ list.innerHTML='<div class="muted">Mail API not available.</div>'; return; }
+    let data = await r.json();
+    data = Array.isArray(data)?data:[];
+    data = await hydrateListIfNeeded(data);
+    list.innerHTML = data.length ? data.map(trashRow).join('') : '<div class="muted">Nothing in trash.</div>';
+  }catch(e){ list.innerHTML = `<div class="muted">Error: ${esc(e.message)}</div>`; }
+}
+byId('trashList')?.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button[data-tact]'); if(!btn) return;
+  const row = e.target.closest('[data-id]'); const id = row?.dataset.id; if(!id) return;
+  try{
+    if(btn.dataset.tact==='restore'){ await actRestore(id); }
+    else if(btn.dataset.tact==='purge'){ await actDelete(id); }
+    await loadTrash(); await loadMail('inbox'); await loadSent(); pollInbox();
+  }catch(err){ alert('Action failed: '+err.message); }
+});
+on('trashReload','click', loadTrash);
+
+/* Resizer */
+function enableResizers(){
+  $$('.resizer').forEach(resizer=>{
+    const shell = resizer.parentElement;
+    if(!shell || !shell.classList.contains('mail-shell')) return;
+    let startX, startWidth;
+    function onDown(e){ startX = e.clientX; const cols = getComputedStyle(shell).gridTemplateColumns.split(' '); startWidth = parseInt(cols[0],10) || 360; document.body.classList.add('resizing'); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); }
+    function onMove(e){ const dx = e.clientX - startX; const newW = Math.max(260, Math.min(560, startWidth + dx)); shell.style.gridTemplateColumns = `${newW}px 10px 1fr`; }
+    function onUp(){ document.body.classList.remove('resizing'); window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }
+    resizer.addEventListener('mousedown', onDown);
+  });
+}
+
+/* ---------- Wire and boot ---------- */
+on('refreshBtn','click', listDepts);
+on('refreshStaffBtn','click', listStaff);
+
+(async function boot(){
+  await loadMe();                    
+  await Promise.all([listDepts(), listStaff()]);
+  await Promise.all([loadUsersForCompose(), loadStaffForCompose(), loadAdminsForCompose()]);
+  buildRecipientOptions();
+  await loadMail('inbox'); await loadSent(); await loadTrash();
+  if(!getLastSeenId() && INBOX_LAST_MAX_ID) setLastSeenId(INBOX_LAST_MAX_ID);
+  startPolling();
+  enableResizers();
+})();
+</script>
+</body>
+</html>

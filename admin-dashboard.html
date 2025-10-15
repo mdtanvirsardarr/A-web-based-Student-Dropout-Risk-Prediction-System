@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard – Dropout Predictor</title>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+
+  <!-- Bootstrap & DataTables -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" rel="stylesheet">
+
+<style>
+  :root{
+    --brand:#0a0aed; --soft:#f6f7f9; --card:#ffffff;
+    --text:#1f2937; --muted:#6b7280; --border:#e5e7eb;
+    --good:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+    --aside-w:340px;
+    --header-h:76px;
+    --footer-h:72px;
+    --gutter:.65rem;
+  }
+
+  html,body{height:100%}
+  body{
+    font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    background:var(--soft); color:var(--text); font-size:18px;
+    min-height:100vh; display:flex; flex-direction:column;
+    padding-bottom:var(--footer-h);
+    padding-top: var(--header-h);
+  }
+  header.navbar{
+    position: fixed;
+    top: 0; left: 0; right: 0; width: 100%;
+    z-index: 1040;
+    background:linear-gradient(90deg,#1e3a8a,#0b1220);
+    color: #fff;
+    border-bottom: 1px solid var(--border);
+    height: var(--header-h);
+    padding: 0 1.25rem;
+    display: flex; align-items: center;
+  }
+
+  header.navbar .navbar-brand,
+  header.navbar a{ color:#fff !important }
+
+  .btn-logout{ background:#f42303; color:#0b5ed7; border-color:#ffffff }
+  .btn-logout:hover{ background:#e9ecef; color:#0b5ed7; border-color:#e9ecef }
+
+  .app{flex:1; display:flex; min-height:0}
+
+  aside#sidenav{
+    position:fixed; left:0; top:var(--header-h);
+    width:var(--aside-w); height:calc(100vh - var(--header-h));
+    background:white; color:black; border-right:1px solid var(--border); overflow-y:auto; z-index:1030;
+  }
+  .brand{padding:1rem; border-bottom:1px solid var(--border)}
+  .brand .logo{display:flex; gap:.5rem; align-items:center; font-weight:700; font-size:1.05rem; color:var(--brand)}
+  .nav-section{padding:.75rem 1rem .25rem; font-size:.75rem; font-weight:600; text-transform:uppercase; color:#eff1f5}
+  .sidenav a{display:flex; align-items:center; gap:.6rem; padding:.6rem 1rem; color:black; text-decoration:none; border-radius:0; margin:.15rem .5rem}
+  .sidenav a:hover,.sidenav a.active{background:#3206f7; color:#ecedee}
+
+  main{
+    margin-left:var(--aside-w);
+    padding:1rem;
+    padding-bottom:calc(var(--footer-h) + 96px);
+    min-width:0; 
+  }
+
+  .content-wrap{ max-width:100%; margin:0 auto }
+
+  section{ margin-bottom:1.25rem }
+  section:last-of-type{ margin-bottom:0 }
+
+  @media (max-width: 992px){
+    aside#sidenav{
+      transform:translateX(-100%); transition:transform .25s ease; width:min(86vw, 360px);
+      top:var(--header-h); height:calc(100vh - var(--header-h));
+    }
+    aside#sidenav.open{ transform:none }
+    .sidenav-backdrop{ display:none }
+    .sidenav-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(0,0,0,.15); backdrop-filter:blur(2px); z-index:1020 }
+    main{ margin-left:0; padding-bottom:calc(var(--footer-h) + 96px) }
+  }
+
+  /* Cards */
+  .row.g-3, .row.g-tight{ --bs-gutter-x: var(--gutter); --bs-gutter-y: var(--gutter) }
+  .card{border:1px solid var(--border); border-radius:0; background:var(--card)}
+  .card-header{background:#e9ecef; border-bottom:1px solid var(--border); border-radius:0}
+  .stat{display:flex; align-items:center; gap:.75rem}
+  .stat .icon{width:44px; height:44px; display:grid; place-items:center; background:#eff4ff; color:#0b5ed7}
+
+  /* Badges, chips */
+  .badge-soft{background:#eef6ff; color:#0b5ed7; border:1px solid #daecff}
+  .small-muted{font-size:.9rem; color:var(--muted)}
+  .divider{height:1px; background:var(--border); margin:.75rem 0}
+  .avatar{width:44px; height:44px; border-radius:50%; object-fit:cover; border:1px solid var(--border)}
+  .chip{border:1px solid var(--border); padding:.35rem .6rem; border-radius:0; background:#fff; color:#3802e9; user-select:none; cursor:pointer}
+  .chip.active{border-color:var(--brand); color:#e6e6ed; background:#1604dd}
+  .chip.high.active{border-color:var(--bad); color:#b91c1c; background:#fff1f2}
+  .chip.medium.active{border-color:var(--warn); color:#9a6700; background:#fff7ed}
+  .chip.low.active{border-color:var(--good); color:#166534; background:#ecfdf5}
+
+  /* Progress bars */
+  .progress{height:8px; background:#eef2f7}
+
+  /* Confusion matrix */
+  .cmatrix{width:100%; border-collapse:separate; border-spacing:0}
+  .cmatrix th,.cmatrix td{border:1px solid var(--border); padding:.5rem; text-align:center}
+  .cmatrix th{background:#b1aaed}
+  .cm-hit{background:#87ebb8}
+  .cm-miss{background:#f6f3f5}
+
+  /* Chart containers - SMALLER & responsive */
+  .chart-square{
+    position:relative; width:100%; max-width:100%;
+    margin-inline:auto; aspect-ratio:4/3; min-height:220px; max-height:320px;
+    margin-bottom:1rem;
+  }
+  .chart-square canvas{ position:absolute; inset:0; width:100% !important; height:100% !important; }
+  .chart-square .square-inner{ position:absolute; inset:0; overflow:auto; padding:.25rem; }
+
+  @media (min-width: 1200px){
+    .chart-square{ min-height:240px; max-height:300px; }
+  }
+  @media (max-width: 768px){
+    .chart-square{ aspect-ratio: 3/2; min-height:180px; max-height:240px; }
+  }
+  @media (max-width: 576px){
+    :root{ --aside-w:300px; --header-h:64px; --gutter:.5rem; }
+    body{ font-size:16px; }
+    .stat .icon{ width:36px; height:36px; }
+    .chart-square{ aspect-ratio: 16/10; min-height:160px; max-height:220px; }
+  }
+
+  /* DataTables */
+  .dataTables_wrapper{ padding-bottom:96px }
+  .dataTables_wrapper .dataTables_paginate{ margin-top:.5rem }
+
+  /* Users section*/
+  #users{ width:100% }
+  #users .card{ width:100%; }
+  #users .card > .card-body{ width:100%; }
+  #users .table-responsive,
+  #users .dataTables_wrapper,
+  #users .table{
+    width:100% !important;
+    max-width:100% !important;
+    box-sizing:border-box;
+  }
+
+  /* Keep Predict form actions*/
+  #predict { 
+    margin-bottom: calc(var(--footer-h) + 16px);
+  }
+  #predict .card .card-body {
+    padding-bottom: calc(var(--footer-h) + 56px);
+  }
+
+  /* footer */
+  footer.footer{
+    position:fixed; left:0; right:0; bottom:0;
+    z-index:1035; height:var(--footer-h);
+    display:flex; align-items:center;
+    background:linear-gradient(90deg,#1e3a8a,#0b1220);
+    border-top:1px solid var(--border);
+    padding:0 1rem; border-radius:0;
+  }
+  footer.footer *{ color:#fff !important }
+</style>
+
+
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <button class="btn btn-outline-light d-lg-none me-2" id="toggleSidenav" aria-label="Toggle navigation"><i class="fa-solid fa-bars"></i></button>
+      <a class="navbar-brand fw-bold" href="#"><i class="fa-solid fa-graduation-cap me-2 text-white"></i>Dropout Predictor – Admin</a>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <span class="small-muted d-none d-md-inline text-white-50">Signed in as</span>
+        <div class="d-flex align-items-center gap-2">
+          {% if current_user and current_user.profile_photo %}
+            <img src="{{ current_user.profile_photo }}" class="avatar" alt="Admin avatar">
+          {% else %}
+            <img src="/uploads/default.png" class="avatar" alt="Admin avatar" onerror="this.style.visibility='hidden'">
+          {% endif %}
+          <div class="me-2 text-white">
+            <div class="fw-semibold">{{ current_user.name if current_user else 'Administrator' }}</div>
+            <div class="small text-white-50">{{ current_user.department if current_user else 'Administration' }}</div>
+          </div>
+        </div>
+        <button class="btn btn-outline-light" id="btnProfile"><i class="fa-solid fa-user-gear me-1"></i>Profile</button>
+        <a class="btn btn-logout" href="index.html">LogOut</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="sidenav-backdrop" id="backdrop"></div>
+
+  <div class="app">
+    <!-- Aside -->
+    <aside id="sidenav">
+      <div class="brand"><div class="logo"><span>Admin Console</span></div></div>
+      <nav class="sidenav py-2">
+        
+        <a href="#overview" class="active">Overview</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#governance">Governance & Validation</a>
+        <a href="#users">Manage Students</a>
+        <a href="#mc-students">Monte Carlo Simulation</a>
+        <a href="#predict">Predict Risk</a>
+        <a href="admin-departments.html">Manage Departments & Staffs</a>
+        
+        
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main>
+      <div class="content-wrap">
+
+        <!-- Overview -->
+        <section id="overview" class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="h4 mb-0">Overview</h1>
+            <div class="d-flex align-items-center gap-2">
+              <div class="small-muted">Current model: <span id="currentModel" class="badge rounded-pill bg-primary-subtle text-primary border">—</span></div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <!-- KPI cards -->
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="card h-100"><div class="card-body">
+                <div class="stat mb-2"><div class="icon"></div><div><div class="fw-semibold">Accuracy</div><div class="h4 mb-0"><span id="kpi-acc">—</span></div></div></div>
+                <div class="progress"><div id="bar-acc" class="progress-bar bg-primary" style="width:0%"></div></div>
+              </div></div>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="card h-100"><div class="card-body">
+                <div class="stat mb-2"><div class="icon"></div><div><div class="fw-semibold">Precision</div><div class="h4 mb-0"><span id="kpi-prec">—</span></div></div></div>
+                <div class="progress"><div id="bar-prec" class="progress-bar bg-success" style="width:0%"></div></div>
+              </div></div>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="card h-100"><div class="card-body">
+                <div class="stat mb-2"><div class="icon"><i class="fa-solid fa-rotate-left"></i></div><div><div class="fw-semibold">Recall</div><div class="h4 mb-0"><span id="kpi-recall">—</span></div></div></div>
+                <div class="progress"><div id="bar-recall" class="progress-bar bg-info" style="width:0%"></div></div>
+              </div></div>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-3">
+              <div class="card h-100"><div class="card-body">
+                <div class="stat mb-2"><div class="icon"><i class="fa-solid fa-clock-rotate-left"></i></div><div><div class="fw-semibold">Last Trained</div><div class="h6 mb-0"><span id="kpi-last">—</span></div></div></div>
+                <div class="small-muted">Updates weekly (scheduler)</div>
+              </div></div>
+            </div>
+
+            <!-- Students by Risk -->
+            <div class="col-12 col-xl-4">
+              <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span class="fw-semibold">Students by Risk</span>
+                  <span class="badge badge-soft rounded-pill">Live</span>
+                </div>
+                <div class="card-body">
+                  <div class="d-flex justify-content-between mb-2"><div>High</div><div class="fw-semibold text-danger" id="risk-high">—</div></div>
+                  <div class="progress mb-2"><div id="bar-high" class="progress-bar" style="width:0%; background:var(--bad)"></div></div>
+                  <div class="d-flex justify-content-between mb-2"><div>Medium</div><div class="fw-semibold text-warning" id="risk-medium">—</div></div>
+                  <div class="progress mb-2"><div id="bar-medium" class="progress-bar" style="width:0%; background:var(--warn)"></div></div>
+                  <div class="d-flex justify-content-between mb-2"><div>Low</div><div class="fw-semibold text-success" id="risk-low">—</div></div>
+                  <div class="progress"><div id="bar-low" class="progress-bar" style="width:0%; background:var(--good)"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Factor legend -->
+            <div class="col-12 col-xl-8">
+              <div class="card h-100">
+                <div class="card-header"><span class="fw-semibold">Risk Factors – Thresholds</span></div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <table class="table table-sm mb-0">
+                        <tbody>
+                          <tr><th class="w-50">Attendance</th><td>Low ≥ 80 • Med 70–79 • High &lt; 70</td></tr>
+                          <tr><th>GPA</th><td>Low ≥ 3.0 • Med 2.5–2.9 • High &lt; 2.5</td></tr>
+                          <tr><th>Assignment Avg</th><td>Low ≥ 70 • Med 60–69 • High &lt; 60</td></tr>
+                          <tr><th>Quiz Avg</th><td>Low ≥ 70 • Med 60–69 • High &lt; 60</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <table class="table table-sm mb-0">
+                        <tbody>
+                          <tr><th class="w-50">Activity Gap</th><td>Low ≤ 7 days • Med 8–30 • High &gt; 30</td></tr>
+                          <tr><th>Mental Health</th><td>Low ≥ 7 • Med 5–6 • High &lt; 5</td></tr>
+                          <tr><th>Financial</th><td>Low Stable/Scholarship • High Unstable</td></tr>
+                          <tr><th>Extracurricular</th><td>Low Yes • Med No</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- Analytics -->
+        <section id="analytics" class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0">Analytics</h2>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-xl-6">
+              <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                  <span class="fw-semibold">Feature Importance</span>
+                  <span class="small-muted">From current trained model</span>
+                </div>
+                <div class="card-body d-flex justify-content-center">
+                  <div class="chart-square"><canvas id="fiChart" aria-label="Feature Importance"></canvas></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-xl-6">
+              <div class="card h-100">
+                <div class="card-header fw-semibold">Confusion Matrix</div>
+                <div class="card-body d-flex justify-content-center">
+                  <div class="chart-square"><div id="cmatrixWrap" class="square-inner"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-xl-6">
+              <div class="card h-100">
+                <div class="card-header fw-semibold">Risk Distribution</div>
+                <div class="card-body d-flex justify-content-center">
+                  <div class="chart-square"><canvas id="riskDistChart" aria-label="Risk Distribution"></canvas></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-xl-6">
+              <div class="card h-100">
+                <div class="card-header fw-semibold">Metrics (Bar)</div>
+                <div class="card-body d-flex justify-content-center">
+                  <div class="chart-square"><canvas id="metricsChart" aria-label="Metrics bar chart"></canvas></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Governance -->
+        <section id="governance" class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0">Governance & Validation</h2>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-xl-7">
+              <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span class="fw-semibold">Thresholds and Validation</span>
+                  <span class="badge badge-soft rounded-pill" id="calMethod">—</span>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                      <ul class="list-group small">
+                        <li class="list-group-item d-flex justify-content-between"><span>Macro-F1 (mean±std)</span><span id="ncvm-f1">—</span></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>Balanced Acc (mean±std)</span><span id="ncvm-balacc">—</span></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>AUROC (mean±std)</span><span id="ncvm-auroc">—</span></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>AUPRC (mean±std)</span><span id="ncvm-auprc">—</span></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>Brier (mean±std)</span><span id="ncvm-brier">—</span></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>ECE (mean±std)</span><span id="ncvm-ece">—</span></li>
+                      </ul>
+                    </div>
+                    <div class="col-12 col-md-6">
+                      <div class="border p-3">
+                        <div class="fw-semibold mb-2"><i class="fa-solid fa-sliders me-1 text-success"></i> Locked Operating Points</div>
+                        <table class="table table-sm mb-2">
+                          <tbody>
+                            <tr><th class="w-50">High band P(High) ≥</th><td id="thrHigh">—</td></tr>
+                            <tr><th>Low band P(Low) ≥</th><td id="thrLow">—</td></tr>
+                          </tbody>
+                        </table>
+                        <div class="small-muted">Fixed on validation; used at serving time.</div>
+                      </div>
+                      <div class="small-muted mt-3">Model: <span id="modelName">—</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-xl-5">
+              <div class="card h-100">
+                <div class="card-header fw-semibold">Calibration Reliability Diagram</div>
+                <div class="card-body">
+                  <img id="img-calib" class="img-fluid border d-none" alt="Reliability diagram">
+                  <div id="calibNone" class="text-muted small">No calibration plot available yet.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Users -->
+        <section id="users" class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0">Registered Users</h2>
+            <div class="small-muted">Edit users, update photo, or delete accounts</div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-responsive">
+                <table id="usersTable" class="table table-striped table-bordered w-100 align-middle">
+                  <thead><tr>
+                    <th style="width:70px;">ID</th>
+                    <th style="width:70px;">Photo</th>
+                    <th>Name</th><th>Email</th>
+                    <th style="width:120px;">Role</th><th style="width:120px;">Status</th>
+                    
+                    <th style="width:110px;">Band</th>
+                    <th style="width:110px;">Risk</th>
+                    
+                    <th style="width:160px;">Actions</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Monte Carlo Students -->
+        <section id="mc-students" class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="h5 mb-0">Monte Carlo Simulation – Students (sample view)</h2>
+            <div class="small-muted">Default page shows 10 rows. Use filters below.</div>
+          </div>
+          <div class="mb-3">
+            <span class="me-2 small-muted">Filter by Risk:</span>
+            <span class="chip low me-1" data-risk="Low">Low</span>
+            <span class="chip medium me-1" data-risk="Medium">Medium</span>
+            <span class="chip high me-1" data-risk="High">High</span>
+            <span class="chip me-1" id="clearRisk">Clear</span>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-responsive">
+                <table id="studentsTable" class="table table-hover table-bordered align-middle w-100">
+                  <thead><tr>
+                    <th>ID</th><th>Name</th><th>Email</th><th>Attendance</th><th>GPA</th><th>Assign. Avg</th>
+                    <th>Quiz Avg</th><th>Risk</th><th>Last Activity</th><th>Financial</th><th>Mental</th><th>Extra</th><th style="width:90px;">Explain</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Predict Risk -->
+        <section id="predict" class="mb-5">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 mb-0">Test Dropout Risk - Real-time</h2>
+            <span class="small-muted">Uses current trained model & thresholds</span>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-xl-5">
+              <div class="card h-100">
+                <div class="card-header fw-semibold">Input Factors</div>
+                <div class="card-body">
+                  <form id="predictForm" novalidate>
+                    <div class="row g-3">
+                      <div class="col-6"><label class="form-label">Attendance (%)</label><input type="number" min="0" max="100" step="1" class="form-control" name="attendance" required></div>
+                      <div class="col-6"><label class="form-label">GPA (0–4)</label><input type="number" min="0" max="4" step="0.01" class="form-control" name="gpa" required></div>
+                      <div class="col-6"><label class="form-label">Assignment Avg</label><input type="number" min="0" max="100" step="1" class="form-control" name="assignment_avg" required></div>
+                      <div class="col-6"><label class="form-label">Quiz Avg</label><input type="number" min="0" max="100" step="1" class="form-control" name="quiz_avg" required></div>
+                      <div class="col-6"><label class="form-label">Days Since Last Activity</label><input type="number" min="0" max="365" step="1" class="form-control" name="days_since_last_activity" required></div>
+                      <div class="col-6"><label class="form-label">Financial Status</label>
+                        <select class="form-select" name="financial_status" required>
+                          <option value="Stable">Stable</option><option value="Unstable">Unstable</option><option value="Scholarship">Scholarship</option>
+                        </select>
+                      </div>
+                      <div class="col-6"><label class="form-label">Mental Health (1–10)</label><input type="number" min="1" max="10" step="1" class="form-control" name="mental_health_score" required></div>
+                      <div class="col-6"><label class="form-label">Extracurricular</label>
+                        <select class="form-select" name="extracurricular_activity"><option value="true">Yes</option><option value="false">No</option></select>
+                      </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                      <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass-chart me-1"></i> Predict</button>
+                      <button class="btn btn-outline-secondary" type="reset">Reset</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-xl-7">
+              <div class="card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                  <span class="fw-semibold">Prediction Result</span>
+                  <span class="badge badge-soft rounded-pill" id="pred-model">—</span>
+                </div>
+                <div class="card-body">
+                  <div id="predEmpty" class="text-center text-muted">
+                    <i class="fa-regular fa-circle-question fa-2x"></i>
+                    <div class="mt-2">Fill the form and click Predict to view results.</div>
+                  </div>
+
+                  <div id="predResult" class="d-none">
+                    <div class="row g-3">
+                      <div class="col-12 col-lg-6">
+                        <div class="p-3 border">
+                          <div class="d-flex align-items-center justify-content-between">
+                            <div class="fw-semibold">Predicted Band</div>
+                            <span id="predBadge" class="badge rounded-pill text-bg-secondary">—</span>
+                          </div>
+                          <div class="mt-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <div class="fw-semibold">Overall Risk Score <span class="small text-muted">(0–100)</span></div>
+                              <div class="fw-bold" id="predScoreVal">—</div>
+                            </div>
+                            <div class="progress mt-1"><div id="predScoreBar" class="progress-bar bg-danger" style="width:0%"></div></div>
+                          </div>
+                          <div class="chart-square mt-3"><canvas id="probChart" aria-label="Probabilities"></canvas></div>
+                        </div>
+                      </div>
+                      <div class="col-12 col-lg-6">
+                        <div class="p-3 border">
+                          <div class="fw-semibold mb-2">Key Factors (with status)</div>
+                          <div id="predFactors" class="small"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="small-muted mt-3">Risk score is supplied by the API (0–100). Thresholds are locked from validation.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Fixed footer -->
+  <footer class="footer">
+    <div class="container-fluid px-3">
+      <div class="d-flex align-items-center justify-content-between w-100">
+        <div>© <span id="year"></span> Dropout Predictor Admin</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Edit User Modal -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+      <form id="editUserForm" enctype="multipart/form-data">
+        <div class="modal-header"><h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-1"></i> Edit User</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <input type="hidden" name="id" />
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <img id="editUserPhotoPreview" class="rounded-circle border" style="width:56px;height:56px;object-fit:cover" alt="Photo">
+            <div class="flex-grow-1">
+              <label class="form-label small mb-1">Update photo (optional)</label>
+              <input type="file" class="form-control form-control-sm" name="photo" accept="image/*">
+            </div>
+          </div>
+          <div class="mb-3"><label class="form-label">Name</label><input class="form-control" name="name" required></div>
+          <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" required></div>
+          <div class="text-muted small">Role/Status are defaults in this schema.</div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button><button class="btn btn-primary" type="submit">Save Changes</button></div>
+      </form>
+    </div></div>
+  </div>
+
+  <!-- Explain Modal -->
+  <div class="modal fade" id="explainModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title"><i class="fa-solid fa-circle-info me-1"></i> Student Risk Factors</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="mb-2 fw-semibold" id="explainStudentName">—</div>
+        <div id="explainLegend"></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline-secondary" data-bs-dismiss="modal" type="button">Close</button></div>
+    </div></div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+      <form id="profileForm" enctype="multipart/form-data">
+        <div class="modal-header"><h5 class="modal-title"><i class="fa-solid fa-user-gear me-1"></i> My Profile</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <img id="profilePhotoPreview" class="rounded-circle border" style="width:72px;height:72px;object-fit:cover" alt="My Photo">
+            <div class="flex-grow-1">
+              <label class="form-label small mb-1">Change profile photo</label>
+              <input type="file" class="form-control form-control-sm" name="profile_photo" accept="image/*">
+            </div>
+          </div>
+          <div class="mb-3"><label class="form-label">Name</label><input class="form-control" name="name" required></div>
+          <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" required></div>
+          <div class="mb-3"><label class="form-label">Department</label><input class="form-control" name="department"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+          <button class="btn btn-primary" type="submit">Save</button>
+        </div>
+      </form>
+    </div></div>
+  </div>
+
+  <!-- JS libs -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/utc.js"></script>
+  <script>dayjs.extend(dayjs_plugin_utc);</script>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+
+  <script>
+    /* Global state */
+    let dtUsers=null, dtStudents=null, fiChart=null, metricsChart=null, riskDistChart=null, probChart=null;
+
+    /* Sidebar drawer */
+    const sidenav=document.getElementById('sidenav'), backdrop=document.getElementById('backdrop');
+    const toggleSidenav=(open)=>{ if(open){sidenav.classList.add('open'); backdrop.classList.add('show');} else {sidenav.classList.remove('open'); backdrop.classList.remove('show');}};
+    document.getElementById('toggleSidenav').addEventListener('click', ()=>toggleSidenav(true));
+    backdrop.addEventListener('click', ()=>toggleSidenav(false));
+
+    /* Utilities */
+    const pct=(v)=> (v==null? '—' : (v*100).toFixed(1)+'%');
+    const setBar=(el,v)=>{ if(el) el.style.width=Math.max(0,Math.min(100,v*100))+'%'; };
+    const fmtDate=(s)=> s ? dayjs.utc(s).local().format('YYYY-MM-DD HH:mm') : '—';
+    const fmtMeanStd=(obj,key)=>{ const m=obj?.[key]?.mean, sd=obj?.[key]?.std; return (m==null||sd==null)?'—':`${m.toFixed(3)} ± ${sd.toFixed(3)}`; };
+    const riskBadge=(r)=>{ const m={High:'text-bg-danger',Medium:'text-bg-warning',Low:'text-bg-success'}; return `<span class="badge ${m[r]||'text-bg-secondary'}">${r||'—'}</span>`; };
+    const badgeClass=(s)=> s==='High'?'text-bg-danger':(s==='Medium'?'text-bg-warning':(s==='Low'?'text-bg-success':'text-bg-secondary'));
+
+    /* Section router */
+    const sections=[...document.querySelectorAll('main section')];
+    function showSectionFromHash(hash){
+      const id=(hash||'#overview');
+      document.querySelectorAll('aside a').forEach(a=>a.classList.toggle('active', a.getAttribute('href')===id));
+      if(id==='#overview'){ sections.forEach(s=>s.classList.remove('d-none')); return; }
+      sections.forEach(s=> s.id===id.substring(1) ? s.classList.remove('d-none') : s.classList.add('d-none'));
+      toggleSidenav(false);
+    }
+    window.addEventListener('hashchange', ()=>showSectionFromHash(location.hash));
+    document.querySelectorAll('aside a[href^="#"]').forEach(a=>{
+      a.addEventListener('click',(e)=>{ e.preventDefault(); const hash=a.getAttribute('href'); history.pushState(null,'',hash); showSectionFromHash(hash); });
+    });
+    showSectionFromHash(location.hash || '#overview');
+
+    /* Confusion matrix */
+    function renderConfMatrix(container, matrix){
+      if(!Array.isArray(matrix) || !matrix.length){ container.innerHTML='<div class="text-muted small">No confusion matrix available.</div>'; return; }
+      const labels=['High','Medium','Low'];
+      let html='<table class="cmatrix"><thead><tr><th rowspan="2" class="align-middle">Actual</th><th colspan="3">Predicted</th></tr><tr>';
+      labels.forEach(l=> html+=`<th>${l}</th>`); html+='</tr></thead><tbody>';
+      for(let i=0;i<matrix.length;i++){
+        html+=`<tr><th>${labels[i]||('C'+i)}</th>`;
+        for(let j=0;j<matrix[i].length;j++){
+          const val=matrix[i][j]; const cls=(i===j)?'cm-hit':'cm-miss';
+          html+=`<td class="${cls}">${val}</td>`;
+        }
+        html+='</tr>';
+      }
+      html+='</tbody></table>';
+      container.innerHTML=html;
+    }
+
+    /* Load analysis */
+    async function loadAnalysis(){
+      try{
+        const res=await fetch('/api/dropout-analysis', { credentials: 'same-origin' });
+        if(!res.ok) throw new Error('Failed to load analysis');
+        const data=await res.json();
+
+        const acc=data.metrics?.accuracy, prec=data.metrics?.precision, rec=data.metrics?.recall;
+        document.getElementById('kpi-acc').textContent=pct(acc);
+        document.getElementById('kpi-prec').textContent=pct(prec);
+        document.getElementById('kpi-recall').textContent=pct(rec);
+        document.getElementById('kpi-last').textContent=fmtDate(data.metrics?.last_trained);
+        setBar(document.getElementById('bar-acc'), acc||0);
+        setBar(document.getElementById('bar-prec'), prec||0);
+        setBar(document.getElementById('bar-recall'), rec||0);
+
+        const r=data.risk_counts||{}; const total=(r.High||0)+(r.Medium||0)+(r.Low||0);
+        document.getElementById('risk-high').textContent=`${r.High||0}`;
+        document.getElementById('risk-medium').textContent=`${r.Medium||0}`;
+        document.getElementById('risk-low').textContent=`${r.Low||0}`;
+        setBar(document.getElementById('bar-high'), total? (r.High/total):0);
+        setBar(document.getElementById('bar-medium'), total? (r.Medium/total):0);
+        setBar(document.getElementById('bar-low'), total? (r.Low/total):0);
+
+        const fi=data.feature_importance||{};
+        const pairs=Object.entries(fi).sort((a,b)=>b[1]-a[1]).slice(0,12);
+        const labels=pairs.map(([k])=>k), vals=pairs.map(([,v])=>v);
+        if(fiChart) fiChart.destroy();
+        fiChart=new Chart(document.getElementById('fiChart'),{
+          type:'bar',
+          data:{labels, datasets:[{label:'Importance', data:vals}]},
+          options:{responsive:true, maintainAspectRatio:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}}}
+        });
+
+        renderConfMatrix(document.getElementById('cmatrixWrap'), data.confusion_matrix||[]);
+
+        if(riskDistChart) riskDistChart.destroy();
+        riskDistChart=new Chart(document.getElementById('riskDistChart'),{
+          type:'bar',
+          data:{labels:['Low','Medium','High'], datasets:[{label:'Count', data:[r.Low||0,r.Medium||0,r.High||0]}]},
+          options:{responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}
+        });
+
+        if(metricsChart) metricsChart.destroy();
+        metricsChart=new Chart(document.getElementById('metricsChart'),{
+          type:'bar',
+          data:{labels:['Accuracy','Precision','Recall'], datasets:[{label:'Score', data:[acc,prec,rec]}]},
+          options:{responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, max:1}}}
+        });
+
+        const art=data.artifacts||{};
+        document.getElementById('currentModel').textContent=art.model||'Calibrated RF';
+        document.getElementById('modelName').textContent=art.model||'RandomForestClassifier (calibrated)';
+        const ncv=art.nested_cv||{};
+        document.getElementById('ncvm-f1').textContent=fmtMeanStd(ncv,'macro_f1');
+        document.getElementById('ncvm-balacc').textContent=fmtMeanStd(ncv,'balanced_accuracy');
+        document.getElementById('ncvm-auroc').textContent=fmtMeanStd(ncv,'auroc_macro');
+        document.getElementById('ncvm-auprc').textContent=fmtMeanStd(ncv,'auprc_macro');
+        document.getElementById('ncvm-brier').textContent=fmtMeanStd(ncv,'brier');
+        document.getElementById('ncvm-ece').textContent=fmtMeanStd(ncv,'ece');
+        const calMethod=art.calibration?.chosen_method || ncv.cal_method_majority || '—';
+        document.getElementById('calMethod').textContent='Calibrator: '+calMethod;
+        document.getElementById('thrHigh').textContent=(art.locked_thresholds?.high_f1 ?? '—');
+        document.getElementById('thrLow').textContent=(art.locked_thresholds?.low_f1 ?? '—');
+
+        if(data.calibration_plot){
+          const img=document.getElementById('img-calib');
+          img.src='/'+data.calibration_plot;
+          img.classList.remove('d-none');
+          document.getElementById('calibNone').classList.add('d-none');
+        }
+      }catch(err){ console.error(err); }
+    }
+
+    /* Users table */
+    async function loadUsers(){
+      try{
+        const res=await fetch('/api/admin/users', { credentials: 'same-origin' });
+        if(!res.ok) return;
+        const users=await res.json();
+        const tbody=document.querySelector('#usersTable tbody'); tbody.innerHTML='';
+        users.forEach(u=>{
+          const tr=document.createElement('tr');
+          const photo = u.profile_photo || '/uploads/default.png';
+          const bandBadge = (u.last_band ? riskBadge(u.last_band) : '<span class="text-muted">—</span>');
+          const riskTxt = (Number.isFinite(u.last_risk) ? `${Number(u.last_risk).toFixed(1)}/100` : '—');
+          tr.innerHTML=`<td>${u.id}</td>
+            <td><img src="${photo}" alt="photo" class="rounded-circle border" style="width:44px;height:44px;object-fit:cover"></td>
+            <td>${u.name||''}</td><td>${u.email||''}</td><td>${u.role||'user'}</td><td>${u.status||'active'}</td>
+            <td>${bandBadge}</td>
+            <td>${riskTxt}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary me-1" data-action="edit"
+                data-id="${u.id}" data-name="${u.name||''}" data-email="${u.email||''}" data-photo="${photo}">
+                <i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-sm btn-outline-danger" data-action="del" data-id="${u.id}">
+                <i class="fa-solid fa-trash"></i></button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+        if(dtUsers) dtUsers.destroy();
+        dtUsers = $('#usersTable').DataTable({
+          pageLength:10, lengthChange:false, order:[[0,'desc']],
+          dom:'Bfrtip', buttons:[{extend:'csvHtml5', className:'btn btn-sm btn-outline-secondary'}],
+          autoWidth:false, responsive:true
+        });
+        setTimeout(()=> dtUsers.columns.adjust().draw(false), 0);
+
+        tbody.querySelectorAll('button[data-action="edit"]').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            const modal=document.getElementById('editUserModal');
+            modal.querySelector('input[name="id"]').value=btn.dataset.id;
+            modal.querySelector('input[name="name"]').value=btn.dataset.name;
+            modal.querySelector('input[name="email"]').value=btn.dataset.email;
+            document.getElementById('editUserPhotoPreview').src = btn.dataset.photo || '/uploads/default.png';
+            modal.querySelector('input[name="photo"]').value = "";
+            new bootstrap.Modal(modal).show();
+          });
+        });
+        tbody.querySelectorAll('button[data-action="del"]').forEach(btn=>{
+          btn.addEventListener('click',async()=>{
+            if(!confirm('Delete this user?')) return;
+            const resp=await fetch(`/api/admin/users/${btn.dataset.id}`,{method:'DELETE', credentials:'same-origin'});
+            if(resp.ok) loadUsers(); else alert('Failed to delete user');
+          });
+        });
+      }catch(e){ console.warn('Users not loaded'); }
+    }
+    document.getElementById('editUserForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const id=e.target.id.value;
+      const formData = new FormData(e.target);
+      try{
+        const resp=await fetch(`/api/admin/users/${id}`,{method:'PUT', body:formData, credentials:'same-origin'});
+        if(resp.ok){ bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide(); loadUsers(); }
+        else { alert('Failed to update user'); }
+      }catch(_){ alert('Failed to update user'); }
+    });
+
+    /* Students table */
+    async function loadStudents(){
+      const res = await fetch('/api/students', { credentials: 'same-origin' });
+      if(!res.ok) return;
+      const students = await res.json();
+
+      const tbody = document.querySelector('#studentsTable tbody');
+      tbody.innerHTML = '';
+
+      students.forEach(s=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${s.id}</td><td>${s.name}</td><td>${s.email}</td>
+          <td>${Number(s.attendance).toFixed(0)}%</td><td>${Number(s.gpa).toFixed(2)}</td>
+          <td>${Number(s.assignment_avg).toFixed(0)}%</td><td>${Number(s.quiz_avg).toFixed(0)}%</td>
+          <td>${riskBadge(s.dropout_risk)}</td>
+          <td>${(s.last_activity_days??'—')} days</td>
+          <td>${s.financial_status||'—'}</td><td>${s.mental_health_score??'—'}</td>
+          <td>${s.extracurricular_activity?'Yes':'No'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-info"
+                    data-explain="${s.id}"
+                    data-name="${s.name}">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      if (dtStudents) dtStudents.destroy();
+
+      dtStudents = $('#studentsTable').DataTable({
+        pageLength: 10,
+        lengthMenu: [10,20,50,100],
+        order: [[0,'asc']],
+        columnDefs: [{targets:7, orderable:false},{targets:12, orderable:false}],
+        autoWidth:false, responsive:true
+      });
+      setTimeout(()=> dtStudents.columns.adjust().draw(false), 0);
+    }
+
+    /*  pagination/search */
+    $(document).on('click', '#studentsTable button[data-explain]', function(){
+      const id = this.dataset.explain;
+      const name = this.dataset.name;
+      openExplain(id, name);
+    });
+
+    /* Explain modal */
+    async function openExplain(id, name){
+      try{
+        const res=await fetch(`/api/student-risk-factors/${id}`, { credentials: 'same-origin' }); if(!res.ok) throw new Error('Explain failed');
+        const data=await res.json(); const legend=data.legend||{};
+        document.getElementById('explainStudentName').textContent=`${name} (ID ${id})`;
+        const container=document.getElementById('explainLegend'); container.innerHTML='';
+
+        const order = [
+          ['attendance','Attendance'],
+          ['gpa','GPA'],
+          ['assignment','Assignment Avg'],
+          ['quiz','Quiz Avg'],
+          ['activity_gap','Activity Gap (days)'],
+          ['mental_health','Mental Health'],
+          ['financial','Financial'],
+          ['extracurricular','Extracurricular']
+        ];
+
+        order.forEach(([key,label])=>{
+          const meta=legend[key]; if(!meta) return;
+          const status = meta.status || '—';
+          const cls = badgeClass(status);
+          const val = (meta.value!=null? meta.value : '—');
+          const thresholds = meta.thresholds || {};
+          const row=document.createElement('div'); row.className='mb-2';
+          row.innerHTML=`<div class="d-flex justify-content-between">
+              <div><strong>${label}</strong> <span class="badge ${cls} ms-1">${status}</span></div>
+              <div class="small-muted">value: ${val}</div>
+            </div>
+            <div class="small-muted">Thresholds: ${Object.entries(thresholds).map(([k,v])=>k+': '+v).join(' • ')}</div>`;
+          container.appendChild(row);
+        });
+        new bootstrap.Modal(document.getElementById('explainModal')).show();
+      }catch(err){ console.error(err); alert('Could not load risk factors.'); }
+    }
+
+    /* Risk filters */
+    function setupRiskFilters(){
+      const chips=document.querySelectorAll('[data-risk]');
+      chips.forEach(chip=>{
+        chip.addEventListener('click',()=>{
+          chips.forEach(c=>c.classList.remove('active')); chip.classList.add('active');
+          const val=chip.getAttribute('data-risk'); dtStudents.column(7).search(val, true, false).draw();
+        });
+      });
+      document.getElementById('clearRisk').addEventListener('click',()=>{ document.querySelectorAll('[data-risk]').forEach(c=>c.classList.remove('active')); dtStudents.column(7).search('').draw(); });
+    }
+
+    /* Predict form */
+    document.getElementById('predictForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const f=e.target;
+      const payload={
+        attendance:Number(f.attendance.value), gpa:Number(f.gpa.value),
+        assignment_avg:Number(f.assignment_avg.value), quiz_avg:Number(f.quiz_avg.value),
+        days_since_last_activity:Number(f.days_since_last_activity.value),
+        financial_status:f.financial_status.value, mental_health_score:Number(f.mental_health_score.value),
+        extracurricular_activity:(f.extracurricular_activity.value==='true')
+      };
+      try{
+        const res=await fetch('/api/predict-risk',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload), credentials:'same-origin'});
+        if(!res.ok){ const err=await res.json().catch(()=>({error:'Prediction failed'})); throw new Error(err.error||'Prediction failed'); }
+        const data=await res.json(); renderPrediction(data);
+        document.getElementById('predResult').scrollIntoView({behavior:'smooth', block:'nearest'});
+      }catch(err){ alert(err.message); }
+    });
+
+    function renderPrediction(data){
+      document.getElementById('predEmpty').classList.add('d-none');
+      document.getElementById('predResult').classList.remove('d-none');
+      document.getElementById('pred-model').textContent='Calibrated RF';
+
+      const band=data.prediction||'—';
+      const badge=document.getElementById('predBadge'); badge.className='badge rounded-pill';
+      if(band==='High') badge.classList.add('text-bg-danger'); else if(band==='Medium') badge.classList.add('text-bg-warning'); else if(band==='Low') badge.classList.add('text-bg-success'); else badge.classList.add('text-bg-secondary');
+      badge.textContent=band;
+
+      if (typeof data.risk_score === 'number') {
+        const score = Math.max(0, Math.min(100, Number(data.risk_score)));
+        document.getElementById('predScoreVal').textContent = score.toFixed(1) + '/100';
+        document.getElementById('predScoreBar').style.width = score + '%';
+      } else {
+        document.getElementById('predScoreVal').textContent = '—';
+        document.getElementById('predScoreBar').style.width = '0%';
+      }
+
+      const probs=data.probabilities||{};
+      if(probChart) probChart.destroy();
+      probChart=new Chart(document.getElementById('probChart'),{
+        type:'doughnut',
+        data:{labels:['High','Medium','Low'], datasets:[{data:[probs.High||0,probs.Medium||0,probs.Low||0]}]},
+        options:{responsive:true, maintainAspectRatio:true, plugins:{legend:{position:'bottom'}}}
+      });
+
+      const rf=data.risk_factors||{};
+      const order = [
+        ['attendance','Attendance'],
+        ['gpa','GPA'],
+        ['assignment_avg','Assignment Avg'],
+        ['quiz_avg','Quiz Avg'],
+        ['activity_gap','Activity Gap'],
+        ['mental_health','Mental Health'],
+        ['financial','Financial'],
+        ['extracurricular','Extracurricular']
+      ];
+      const container=document.getElementById('predFactors'); container.innerHTML='';
+      order.forEach(([key,label])=>{
+        const obj = rf[key] || (key==='activity_gap' ? rf['activity'] : null);
+        if(!obj) return;
+        const status = obj.status || '—';
+        const cls = badgeClass(status);
+        const val = ('value' in obj)? obj.value : '—';
+        const thresholds = obj.thresholds || {};
+        const row=document.createElement('div'); row.className='mb-2';
+        row.innerHTML=`<div class="d-flex justify-content-between">
+            <div><strong>${label}</strong> <span class="badge ${cls} ms-1">${status}</span></div>
+            <div class="text-muted">${val}</div>
+          </div>
+          <div class="small-muted">Thresholds: ${Object.entries(thresholds).map(([k,v])=>k+': '+v).join(' • ')}</div>`;
+        container.appendChild(row);
+      });
+    }
+
+    /* Profile modal */
+    const profileModalEl=document.getElementById('profileModal');
+    const profileModal= new bootstrap.Modal(profileModalEl);
+    document.getElementById('btnProfile').addEventListener('click', async ()=>{ await loadProfile(); profileModal.show(); });
+    async function loadProfile(){
+      try{
+        const r=await fetch('/api/admin/me', {credentials:'same-origin'});
+        const me= r.ok ? (await r.json()) : {};
+        profileForm.name.value = me.name || '{{ current_user.name if current_user else "" }}';
+        profileForm.email.value = me.email || '{{ current_user.email if current_user else "" }}';
+        profileForm.department.value = me.department || '{{ current_user.department if current_user else "" }}';
+        document.getElementById('profilePhotoPreview').src = me.profile_photo || '{{ current_user.profile_photo if current_user else "/uploads/default.png" }}';
+        profileForm.profile_photo.value = "";
+      }catch(_){
+        document.getElementById('profilePhotoPreview').src = '{{ current_user.profile_photo if current_user else "/uploads/default.png" }}';
+      }
+    }
+    document.getElementById('profileForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd=new FormData(e.target);
+      try{
+        const r=await fetch('/api/admin/me', {method:'PUT', body:fd, credentials:'same-origin'});
+        if(r.ok){ profileModal.hide(); location.reload(); }
+        else { alert('Failed to update profile'); }
+      }catch(_){ alert('Failed to update profile'); }
+    });
+
+    /* DataTables when layout changes */
+    function adjustTables(){
+      if (dtUsers) dtUsers.columns.adjust().draw(false);
+      if (dtStudents) dtStudents.columns.adjust().draw(false);
+    }
+    window.addEventListener('load', adjustTables);
+    window.addEventListener('resize', ()=>{
+      clearTimeout(window.__dt_rsz);
+      window.__dt_rsz = setTimeout(adjustTables, 100);
+    });
+    window.addEventListener('hashchange', ()=> setTimeout(adjustTables, 0));
+
+    /* Init */
+    (async function init(){
+      document.getElementById('year').textContent=new Date().getFullYear();
+      await loadAnalysis();
+      await loadUsers();
+      await loadStudents();
+      setupRiskFilters();
+    })();
+  </script>
+</body>
+</html>

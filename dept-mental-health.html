@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en" data-dept="mental_health">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Mental Health Department Console</title>
+
+  <!-- Fonts & libs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <style>
+/* ================= TOKENS ================= */
+:root{
+  --brand:#2563eb; --brand-dark:#1e40af;
+  --bg:#f8fafc; --panel:#ffffff;
+  --text:#0f172a; --muted:#64748b;
+  --border:#e2e8f0;
+  --accent:#22c55e; --accent-2:#06b6d4; --danger:#ef4444;
+  --aside-w:300px; --header-h:70px; --footer-h:56px;
+  --radius:12px; --shadow:0 8px 24px rgba(2,6,23,.06);
+}
+html,body{height:100%}
+body{ font-family:Inter,system-ui,sans-serif; background:var(--bg); color:var(--text); }
+
+/* ================= HEADER ================= */
+header.navbar{
+  height:var(--header-h);
+  background:linear-gradient(90deg,var(--brand),var(--brand-dark));
+  position:fixed; inset:0 0 auto 0; z-index:1040;
+  box-shadow:0 2px 14px rgba(2,6,23,.2);
+}
+header .navbar-brand{ color:#fff; font-weight:700; letter-spacing:.2px; }
+header .btn, header .nav-link{ color:#fff !important; }
+.btn-logout{ background:var(--danger); border:none; }
+.btn-logout:hover{ filter:brightness(.95); }
+
+/* ================= LAYOUT ================= */
+.app{ display:flex; padding-top:var(--header-h); min-height:calc(100vh - var(--header-h)); }
+aside#sidenav{
+  width:var(--aside-w); background:var(--panel); border-right:1px solid var(--border);
+  height:calc(100vh - var(--header-h)); position:fixed; left:0; top:var(--header-h);
+  padding:1rem 0; overflow-y:auto; transition:transform .25s ease;
+}
+main{ margin-left:var(--aside-w); padding:1.5rem; flex:1; }
+.content-wrap{ max-width:1200px; margin:0 auto; }
+.section{ display:none; } .section.active{ display:block; }
+
+/* ================= SIDEBAR ================= */
+aside .brand{ padding:.25rem 1.25rem 1rem; font-weight:800; color:var(--text); }
+nav.sidenav a{
+  display:flex; align-items:center; gap:.75rem; padding:.65rem 1.25rem;
+  color:var(--muted); text-decoration:none; font-weight:600; border-radius:10px;
+  margin:.2rem .75rem; transition:.18s; position:relative;
+}
+nav.sidenav a i{ width:18px; text-align:center; }
+nav.sidenav a:hover{ background:#eff6ff; color:var(--brand-dark); }
+nav.sidenav a.active{ background:#e0e7ff; color:var(--brand-dark); box-shadow:inset 0 0 0 1px #c7d2fe; }
+
+/* Notification badge on Inbox */
+.notif-badge{
+  display:none; position:absolute; right:14px; top:8px;
+  background:var(--danger); color:#fff; border-radius:999px;
+  font-size:.72rem; line-height:1; padding:.15rem .45rem; font-weight:800;
+  box-shadow:0 2px 8px rgba(239, 68, 68, .4);
+}
+.notif-dot{
+  display:none; width:8px; height:8px; border-radius:50%;
+  background:var(--danger); margin-left:.35rem;
+}
+.notify-pulse .notif-badge{
+  display:inline-block; animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%{ transform:scale(1); box-shadow:0 0 0 0 rgba(239,68,68,.45); }
+  70%{ transform:scale(1.06); box-shadow:0 0 0 10px rgba(239,68,68,0); }
+  100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(239,68,68,0); }
+}
+
+/* Mobile drawer */
+@media (max-width:992px){
+  aside#sidenav{ transform:translateX(-100%); width:82vw; max-width:340px; z-index:1045; }
+  aside#sidenav.open{ transform:none; }
+  .sidenav-backdrop{ display:none; }
+  .sidenav-backdrop.show{ display:block; position:fixed; inset:0; background:rgba(2,6,23,.35); backdrop-filter:blur(2px); z-index:1040; }
+  main{ margin-left:0; }
+}
+
+/* ================= CARDS / UI ================= */
+.card-dark{
+  background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+  padding:1.2rem; box-shadow:var(--shadow);
+}
+.card-dark h2{ font-size:1.15rem; font-weight:800; margin:0; }
+.small, .text-muted{ color:var(--muted)!important; }
+
+input,select,textarea{
+  width:100%; border:1px solid var(--border); border-radius:10px;
+  padding:.65rem .8rem; font-size:.95rem; background:#fff;
+}
+textarea{ min-height:120px; resize:vertical; }
+input:focus,select:focus,textarea:focus{
+  outline:none; border-color:#93c5fd; box-shadow:0 0 0 3px rgba(59,130,246,.2);
+}
+
+.btnx{
+  padding:.6rem 1rem; border-radius:10px; border:1px solid transparent;
+  font-weight:700; cursor:pointer; transition:.18s;
+}
+.btn-primaryx{ background:var(--brand); color:#fff; }
+.btn-infox{ background:var(--accent-2); color:#00121a; border:1px solid #0891b2; }
+.btn-dangerx{ background:var(--danger); color:#fff; }
+.btnx:hover{ transform:translateY(-1px); filter:brightness(.98); }
+
+.badge-soft{ background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; padding:.25rem .5rem; border-radius:999px; }
+
+/* Avatars */
+.avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid #ffffff33}
+.avatar-lg{width:96px;height:96px;border-radius:50%;object-fit:cover;border:1px solid var(--border)}
+
+/* ================= MAIL UI ================= */
+.mail-shell{ display:grid; grid-template-columns:320px 1fr; gap:1rem; min-height:520px; }
+@media (max-width:992px){ .mail-shell{ grid-template-columns:1fr; } }
+.mail-list{ border:1px solid var(--border); border-radius:var(--radius); background:#fff; overflow:auto; }
+.mail-list .hdr{
+  display:flex; gap:10px; align-items:center; justify-content:space-between;
+  padding:.75rem; border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:#fff; z-index:2;
+}
+.mail-item{
+  padding:.8rem .9rem; border-bottom:1px solid var(--border);
+  cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:.12s;
+}
+.mail-item:hover{ background:#f8fafc; }
+.mail-item.active{ background:#eff6ff; border-left:4px solid var(--brand); }
+.mail-item .who{ font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px; }
+.mail-item .sub{ color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px; }
+.mail-item .meta{ display:flex; gap:8px; align-items:center; color:var(--muted); font-size:.8rem; }
+.dot{ width:8px;height:8px;border-radius:50%;background:#38bdf8; }
+.dot.read{ background:#9ca3af; }
+
+.mail-view{ border:1px solid var(--border); border-radius:var(--radius); background:#fff; display:flex; flex-direction:column; }
+.mail-head{ padding:1rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:14px; align-items:flex-start; }
+.mail-body{ padding:1rem 1.2rem; white-space:pre-wrap; }
+.reply{ border-top:1px dashed var(--border); padding:1rem 1.2rem; display:grid; gap:.6rem; }
+
+/* ================= FOOTER ================= */
+footer.footer{
+  position:sticky; bottom:0; left:0; right:0;
+  height:var(--footer-h);
+  background:linear-gradient(90deg,var(--brand-dark),var(--brand)); color:#fff;
+  display:flex; align-items:center; justify-content:center; font-size:.9rem;
+  box-shadow:0 -6px 18px rgba(2,6,23,.08);
+}
+  </style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <button class="btn d-lg-none" id="toggleSidenav" aria-label="Toggle navigation"><i class="fa-solid fa-bars"></i></button>
+    <a class="navbar-brand" href="#"><i class="fa-solid fa-heart-pulse me-2"></i>Mental Health Console</a>
+    <div class="ms-auto d-flex align-items-center gap-3">
+      <img id="whoimg" class="avatar" alt="avatar"/>
+      <div class="text-white small">
+        <div id="whoname" class="fw-bold">Loading…</div>
+        <div>Dept: <span id="whodept">Checking…</span></div>
+      </div>
+      <button class="btn btn-outline-light btn-sm" id="btnProfile"><i class="fa-solid fa-id-badge me-1"></i>Profile</button>
+      <a class="btn btn-logout btn-sm" href="/staff/logout"><i class="fa-solid fa-right-from-bracket me-1"></i>Logout</a>
+    </div>
+  </div>
+</header>
+
+<div class="sidenav-backdrop" id="backdrop"></div>
+
+<div class="app">
+  <!-- ================= SIDEBAR ================= -->
+  <aside id="sidenav">
+    <div class="brand">Mental Health Console</div>
+    <nav class="sidenav" id="sideNav">
+      <a href="#" class="active" data-target="sec-profile"><i class="fa-regular fa-user"></i> Profile</a>
+      <a href="#" data-target="sec-messages"><i class="fa-regular fa-envelope"></i> Create Mail</a>
+      <a href="#" data-target="sec-inbox" id="navInbox">
+        <i class="fa-solid fa-inbox"></i> Inbox
+        <span class="notif-badge" id="inboxBadge">0</span>
+      </a>
+      <a href="#" data-target="sec-sent"><i class="fa-regular fa-paper-plane"></i> Sent</a>
+      <a href="#" data-target="sec-trash"><i class="fa-regular fa-trash-can"></i> Trash</a>
+      <a href="#" data-target="sec-users"><i class="fa-solid fa-users"></i> Users</a>
+    </nav>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main>
+    <div class="content-wrap">
+
+      <!-- ========== PROFILE ========== -->
+      <section id="sec-profile" class="section active">
+        <div class="card-dark">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge-soft">Mental Health</span>
+              <h2>My Profile</h2>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btnx" id="p_reload"><i class="fa-solid fa-rotate me-1"></i>Reload</button>
+              <button class="btnx btn-infox" id="btnEditProfile"><i class="fa-solid fa-pen me-1"></i>Edit</button>
+            </div>
+          </div>
+
+          <p class="text-muted" id="meLine">Loading your profile…</p>
+
+          <div class="row g-4 align-items-center">
+            <div class="col-md-3 text-center">
+              <img id="p_photo" class="avatar-lg" alt="avatar"/>
+            </div>
+            <div class="col-md-9">
+              <div class="mb-2"><label class="small text-muted">Full Name</label><input id="p_name" disabled/></div>
+              <div class="mb-2"><label class="small text-muted">Email</label><input id="p_email" disabled/></div>
+              <div><label class="small text-muted">Department</label><input id="p_dept" disabled/></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== CREATE MAIL ========== -->
+      <section id="sec-messages" class="section">
+        <div class="card-dark">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h2>Compose Email</h2>
+          </div>
+
+          <div class="row g-3 mb-2">
+            <div class="col-md-6">
+              <label class="small text-muted">Scope</label>
+              <select id="m_scope">
+                <option value="users" selected>Users</option>
+                <option value="staff">All staff (any dept)</option>
+                <option value="admin">Admin</option>
+              </select>
+              <div class="small text-muted mt-1" id="m_hint">Select a recipient from the list.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="small text-muted">Recipient</label>
+              <select id="m_to"></select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-2">
+            <div class="col-md-6">
+              <label class="small text-muted">Subject</label>
+              <input id="m_subject" placeholder="Subject…"/>
+            </div>
+            <div class="col-md-6">
+              <label class="small text-muted">Body</label>
+              <textarea id="m_body" placeholder="Type your message…"></textarea>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <button class="btnx btn-primaryx" id="m_send"><i class="fa-regular fa-paper-plane me-1"></i>Send Email</button>
+            <div class="small text-muted" id="m_msg"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== INBOX ========== -->
+      <section id="sec-inbox" class="section">
+        <div class="card-dark mb-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <h2>Inbox</h2>
+            <div class="d-flex align-items-center gap-2">
+              <select id="mailFolder" class="form-select form-select-sm" style="width:auto">
+                <option value="inbox" selected>Inbox</option>
+                <option value="received">Received</option>
+                <option value="sent">Sent</option>
+              </select>
+              <input id="mailSearch" placeholder="Search…" class="form-control form-control-sm" style="width:240px"/>
+              <button class="btnx" id="mailReload"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mail-shell">
+          <!-- List -->
+          <div class="mail-list">
+            <div id="mailItems"><div class="p-3 text-muted small">Loading…</div></div>
+          </div>
+          <!-- View -->
+          <div class="mail-view">
+            <div class="mail-head">
+              <div>
+                <div class="small text-muted">From</div>
+                <div id="viewFrom" class="fw-bold">—</div>
+                <div class="small text-muted mt-2">To</div>
+                <div id="viewTo" class="text-muted">—</div>
+              </div>
+              <div class="text-end">
+                <div id="viewWhen" class="small text-muted">—</div>
+                <div class="d-flex gap-2 flex-wrap mt-2">
+                  <button class="btnx" id="actRead"><i class="fa-regular fa-envelope-open me-1"></i>Mark read</button>
+                  <button class="btnx btn-dangerx" id="actTrash"><i class="fa-regular fa-trash-can me-1"></i>Delete</button>
+                </div>
+              </div>
+            </div>
+            <div class="px-3 py-2 border-bottom" style="border-color:var(--border)">
+              <div class="small text-muted">Subject</div>
+              <div id="viewSubj" class="fw-bold">—</div>
+            </div>
+            <div id="viewBody" class="mail-body">Select a mail on the left.</div>
+            <div class="reply">
+              <div class="small text-muted">Quick reply</div>
+              <div class="row g-2">
+                <div class="col-md-6"><input id="replyTo" placeholder="To" disabled/></div>
+                <div class="col-md-6"><input id="replySubj" placeholder="Subject"/></div>
+              </div>
+              <textarea id="replyBody" placeholder="Write your reply…"></textarea>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btnx btn-primaryx" id="replySend"><i class="fa-regular fa-paper-plane me-1"></i>Send Reply</button>
+                <div class="small text-muted" id="replyMsg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== SENT ========== -->
+      <section id="sec-sent" class="section">
+        <div class="card-dark mb-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <h2>Sent Mail</h2>
+            <div class="d-flex align-items-center gap-2">
+              <input id="sentSearch" placeholder="Search…" class="form-control form-control-sm" style="width:240px"/>
+              <button class="btnx" id="sentReload"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mail-shell">
+          <div class="mail-list">
+            <div id="sentItems"><div class="p-3 text-muted small">Loading…</div></div>
+          </div>
+          <div class="mail-view">
+            <div class="mail-head">
+              <div>
+                <div class="small text-muted">From</div>
+                <div id="sentFrom" class="fw-bold">—</div>
+                <div class="small text-muted mt-2">To</div>
+                <div id="sentTo" class="text-muted">—</div>
+              </div>
+              <div class="text-end">
+                <div id="sentWhen" class="small text-muted">—</div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <button class="btnx btn-dangerx" id="sentTrash"><i class="fa-regular fa-trash-can me-1"></i>Delete</button>
+                </div>
+              </div>
+            </div>
+            <div class="px-3 py-2 border-bottom" style="border-color:var(--border)">
+              <div class="small text-muted">Subject</div>
+              <div id="sentSubj" class="fw-bold">—</div>
+            </div>
+            <div id="sentBody" class="mail-body">Select a sent mail on the left.</div>
+            <div class="reply">
+              <div class="small text-muted">Quick message</div>
+              <div class="row g-2">
+                <div class="col-md-6"><input id="sentReplyTo" placeholder="To" disabled/></div>
+                <div class="col-md-6"><input id="sentReplySubj" placeholder="Subject"/></div>
+              </div>
+              <textarea id="sentReplyBody" placeholder="Write your message…"></textarea>
+              <div class="d-flex align-items-center gap-2">
+                <button class="btnx btn-primaryx" id="sentReplySend"><i class="fa-regular fa-paper-plane me-1"></i>Send</button>
+                <div class="small text-muted" id="sentReplyMsg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== TRASH ========== -->
+      <section id="sec-trash" class="section">
+        <div class="card-dark">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2>Deleted Mail</h2>
+            <button class="btnx" id="trashReload"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+          </div>
+          <div class="alert alert-light border d-flex align-items-start" role="alert">
+            <i class="fa-regular fa-circle-question me-2 mt-1 text-primary"></i>
+            <div>
+              <strong>Heads-up:</strong> A message is permanently removed only when <b>both parties</b> delete it.
+              Otherwise it stays here until the other side deletes it too.
+            </div>
+          </div>
+          <div id="trashList" class="d-flex flex-column gap-2"><div class="text-muted">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- ========== USERS ========== -->
+      <section id="sec-users" class="section">
+        <div class="card-dark">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2>Registered Users</h2>
+            <div class="d-flex gap-2">
+              <input id="u_q" placeholder="Search by name/email…" class="form-control form-control-sm" style="width:260px"/>
+              <button class="btnx" id="u_reload"><i class="fa-solid fa-rotate me-1"></i>Refresh</button>
+            </div>
+          </div>
+          <div id="u_list" class="d-flex flex-column gap-2"><div class="text-muted">Loading…</div></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">© <span id="year"></span> Dropout Predictor – Mental Health Department</footer>
+
+<!-- ================= Edit Profile Modal ================= -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#fff; border:1px solid var(--border); border-radius:14px;">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa-solid fa-user-pen me-2 text-primary"></i>Edit profile</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="small text-muted">Full Name</label>
+            <input id="mp_name"/>
+          </div>
+          <div class="col-md-6">
+            <label class="small text-muted">Email</label>
+            <input id="mp_email"/>
+          </div>
+        </div>
+        <div class="mt-2">
+          <label class="small text-muted">New password (optional)</label>
+          <input id="mp_pass" type="password" placeholder="Leave blank to keep"/>
+        </div>
+        <div class="mt-2">
+          <label class="small text-muted">Profile photo (optional)</label>
+          <input id="mp_photo" type="file" accept="image/*" class="form-control form-control-sm"/>
+        </div>
+        <div class="small text-muted mt-2" id="mp_msg"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btnx" data-bs-dismiss="modal">Cancel</button>
+        <button class="btnx btn-primaryx" id="mp_save">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= Scripts ================= -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ===== Helpers ===== */
+const $  = (s,ctx=document)=>ctx.querySelector(s);
+const $$ = (s,ctx=document)=>Array.from(ctx.querySelectorAll(s));
+const esc= (s='')=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt= (d)=> d? new Date(d).toLocaleString() : '—';
+const ph = 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="100%" height="100%" rx="48" fill="#eef2ff"/><text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" fill="#64748b" font-family="Inter" font-size="16">IMG</text></svg>`);
+
+/* >>> Force STAFF identity on all mail endpoints <<< */
+function staffURL(u){ return u + (u.includes('?') ? '&' : '?') + 'as=staff'; }
+
+let ME = null;
+let SLUG = (document.documentElement.getAttribute('data-dept')||'').toLowerCase();
+$('#year').textContent = new Date().getFullYear();
+
+/* ===== Sidenav / Nav ===== */
+const sidenav = $('#sidenav'), backdrop = $('#backdrop');
+$('#toggleSidenav').addEventListener('click', ()=>{ sidenav.classList.add('open'); backdrop.classList.add('show'); });
+backdrop.addEventListener('click', ()=>{ sidenav.classList.remove('open'); backdrop.classList.remove('show'); });
+$('#sideNav').addEventListener('click', (e)=>{
+  const a=e.target.closest('a[data-target]'); if(!a) return;
+  e.preventDefault();
+  $$('.section').forEach(sec=>sec.classList.remove('active'));
+  $('#'+a.dataset.target).classList.add('active');
+  $$('#sideNav a').forEach(x=>x.classList.toggle('active', x===a));
+  sidenav.classList.remove('open'); backdrop.classList.remove('show');
+
+  // If they opened Inbox, mark "seen" to clear the pulse
+  if (a.dataset.target === 'sec-inbox') {
+    markInboxSeen(INBOX_LAST_MAX_ID);
+    updateInboxBadgeUI(LAST_UNREAD_COUNT);
+  }
+});
+$('#btnProfile').addEventListener('click', ()=>{ $('#sideNav a[data-target="sec-profile"]').click(); });
+
+/* ===== Profile ===== */
+function prettifySlug(slug){ return slug? slug.replace(/[-_]/g,' ').replace(/\b\w/g,m=>m.toUpperCase()) : ''; }
+
+async function fetchMe(){
+  const r = await fetch('/api/staff/me');
+  if(!r.ok){ location.href = '/auth.html'; return; }
+  const s = await r.json();
+  ME = s;
+
+  const pageSlug = (document.documentElement.getAttribute('data-dept')||'').toLowerCase();
+  const apiSlug  = (s.department && s.department.slug) ? String(s.department.slug).toLowerCase() : '';
+  SLUG = (apiSlug || pageSlug || SLUG || '').toLowerCase();
+  const deptName = s.department?.name || prettifySlug(apiSlug) || 'Department';
+
+  $('#whoname').textContent = s.name || 'Staff';
+  $('#whodept').textContent = deptName;
+  $('#whoimg').src = s.profile_photo || ph;
+
+  $('#p_photo').src = s.profile_photo || ph;
+  $('#p_name').value = s.name || '';
+  $('#p_email').value = s.email || '';
+  $('#p_dept').value = deptName;
+  $('#meLine').textContent = `Signed in as ${s.name} — Dept: ${deptName}`;
+
+  // Prefill modal
+  $('#mp_name').value = s.name || '';
+  $('#mp_email').value = s.email || '';
+  $('#mp_pass').value = '';
+  $('#mp_photo').value = '';
+}
+$('#p_reload').addEventListener('click', fetchMe);
+
+const mp = new bootstrap.Modal('#editProfileModal');
+$('#btnEditProfile').addEventListener('click', ()=>{ $('#mp_msg').textContent=''; mp.show(); });
+
+async function saveProfile(){
+  const msgEl = $('#mp_msg'); msgEl.textContent = 'Saving…';
+  try{
+    const fd = new FormData();
+    fd.append('name', $('#mp_name').value || '');
+    fd.append('email', $('#mp_email').value || '');
+    const pass = $('#mp_pass').value || '';
+    if(pass) fd.append('password', pass);
+    const f = $('#mp_photo').files[0];
+    if(f) fd.append('photo', f);
+
+    const r = await fetch('/api/staff/me', { method:'PUT', body:fd });
+    const d = await r.json();
+    if(!r.ok || d?.ok===false) throw new Error(d?.error || r.status);
+    msgEl.textContent = 'Saved.';
+    await fetchMe();
+    setTimeout(()=>mp.hide(), 300);
+  }catch(err){ msgEl.textContent = 'Failed: '+err.message; }
+}
+$('#mp_save').addEventListener('click', saveProfile);
+
+/* ===== Email: recipients & send ===== */
+let USERS=[], STAFF=[], ADMINS=[];
+async function tryFetch(url, opts){ try{ const r=await fetch(url,opts); if(r.ok) return await r.json(); }catch{} return null; }
+
+async function loadUsers(){
+  try{
+    const r=await fetch('/api/staff/users'); const data=await r.json();
+    if(!r.ok) throw new Error(data?.error||r.status);
+    USERS = Array.isArray(data)?data:[];
+    if($('#m_scope').value==='users') buildRecipientOptions();
+    paintUsers();
+  }catch(e){
+    $('#u_list').innerHTML = `<div class="text-muted">Backend error: ${esc(e.message)}.</div>`;
+  }
+}
+async function loadDepartmentStaff(){
+  const all=await tryFetch('/api/department/staff?dept=all');
+  const same=all || await tryFetch('/api/department/staff');
+  STAFF = Array.isArray(same)?same:[];
+  if($('#m_scope').value==='staff') buildRecipientOptions();
+}
+async function loadAdmins(){
+  const admins=await tryFetch('/api/department/admins');
+  ADMINS = Array.isArray(admins)?admins:[];
+  if($('#m_scope').value==='admin') buildRecipientOptions();
+}
+
+function buildRecipientOptions(){
+  const scope=$('#m_scope').value, to=$('#m_to'), hint=$('#m_hint'); to.innerHTML=''; let list=[];
+  if(scope==='users'){
+    list=(USERS||[]).map(u=>({email:u.email,label:`${u.name||'(no name)'} <${u.email||''}>`}));
+    hint.textContent='Select a registered user.';
+  }else if(scope==='staff'){
+    list=(STAFF||[]).map(s=>({email:s.email,label:`${s.name||'(no name)'} <${s.email||''}> — ${s.department?.name||s.department?.slug||''}`}));
+    hint.textContent=list.length?'Select a staff contact (any dept).':'No staff contacts available.';
+  }else{
+    list=(ADMINS||[]).map(a=>({email:a.email,label:`${a.name||'Admin'} <${a.email||''}>`}));
+    hint.textContent=list.length?'Select an admin contact.':'No admin contacts available.';
+  }
+  list.filter(x=>x.email).sort((a,b)=>(a.label||'').localeCompare(b.label||'')).forEach(x=>{
+    const o=document.createElement('option'); o.value=x.email; o.textContent=x.label; to.appendChild(o);
+  });
+  if(!to.options.length){ const o=document.createElement('option'); o.value=''; o.textContent='(no recipients found)'; to.appendChild(o); }
+}
+$('#m_scope').addEventListener('change', buildRecipientOptions);
+
+async function sendEmail(email,subject,body){
+  const r=await fetch(staffURL('/api/staff/send_email'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({to:email,subject,body})
+  });
+  const d=await r.json(); if(!r.ok) throw new Error(d?.error||r.status); return d;
+}
+$('#m_send').addEventListener('click', async ()=>{
+  const msg=$('#m_msg'); msg.textContent='';
+  const subject=($('#m_subject').value||'').trim()||'Message';
+  const body=($('#m_body').value||'').trim();
+  const to=($('#m_to').value||'').trim();
+  if(!body){ msg.textContent='Message body is required.'; return; }
+  if(!to){ msg.textContent='Choose a recipient.'; return; }
+  try{
+    await sendEmail(to,subject,body);
+    msg.textContent='Email sent.';
+    $('#m_subject').value=''; $('#m_body').value='';
+    loadMail($('#mailFolder').value);
+  }catch(e){ msg.textContent='Failed: '+e.message; }
+});
+
+/* ===== Inbox / Sent / Trash ===== */
+async function actDelete(id){
+  const r=await fetch(staffURL(`/api/emails/${id}`), {method:'DELETE'});
+  const d=await r.json(); if(!r.ok) throw new Error(d?.error||r.status); return d;
+}
+async function actRestore(id){
+  const r=await fetch(staffURL(`/api/emails/${id}/restore`), {method:'PUT'});
+  const d=await r.json(); if(!r.ok) throw new Error(d?.error||r.status); return d;
+}
+async function actRead(id){
+  await fetch(staffURL(`/api/emails/${id}/read`), {method:'PUT'});
+}
+
+/* Inbox state + badge */
+const STATE={folder:'inbox', list:[], selected:null};
+let INBOX_LAST_MAX_ID = 0;
+let LAST_UNREAD_COUNT = 0;
+let POLL_TIMER = null;
+function badgeEl(){ return $('#inboxBadge'); }
+function inboxLink(){ return $('#navInbox'); }
+function lastSeenKey(){ return `inbox_last_seen_${(ME?.email||'').toLowerCase()}`; }
+function getLastSeenId(){ return Number(localStorage.getItem(lastSeenKey())||0); }
+function setLastSeenId(id){ localStorage.setItem(lastSeenKey(), String(id||0)); }
+
+function computeUnreadAndMax(list){
+  let unread=0, maxId=0;
+  for(const m of list){ if(!m.read) unread++; if(Number(m.id)>maxId) maxId = Number(m.id); }
+  return { unread, maxId };
+}
+function updateInboxBadgeUI(unread){
+  LAST_UNREAD_COUNT = unread;
+  const b = badgeEl(); const link = inboxLink();
+  if (unread>0){ b.style.display='inline-block'; b.textContent = String(unread); }
+  else { b.style.display='none'; b.textContent = '0'; }
+  if (INBOX_LAST_MAX_ID > getLastSeenId() && unread>0) link.classList.add('notify-pulse');
+  else link.classList.remove('notify-pulse');
+}
+function markInboxSeen(latestId){
+  if(latestId) setLastSeenId(latestId);
+  inboxLink().classList.remove('notify-pulse');
+}
+
+/* Pull only Inbox metadata on an interval (light) */
+async function pollInbox(){
+  try{
+    const r = await fetch(staffURL('/api/emails?box=inbox&limit=200'));
+    if(!r.ok) return;
+    const data = await r.json();
+    if(!Array.isArray(data)) return;
+    const {unread, maxId} = computeUnreadAndMax(data);
+    INBOX_LAST_MAX_ID = Math.max(INBOX_LAST_MAX_ID, maxId);
+    updateInboxBadgeUI(unread);
+  }catch{}
+}
+function startPolling(){
+  stopPolling();
+  pollInbox();
+  POLL_TIMER = setInterval(()=>{ if(!document.hidden) pollInbox(); }, 20000);
+}
+function stopPolling(){
+  if(POLL_TIMER){ clearInterval(POLL_TIMER); POLL_TIMER=null; }
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) stopPolling(); else startPolling(); });
+
+/* Inbox list */
+function listRow(m){
+  const who = (STATE.folder==='sent' ? (m.to?.email || m.to_email || '') : (m.from?.email || m.from_email || ''));
+  const created = m.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+  return `<div class="mail-item" data-id="${m.id}">
+    <div class="d-flex flex-column">
+      <span class="who">${esc(who||'(unknown)')}</span>
+      <span class="sub">${esc(m.subject||'(no subject)')}</span>
+    </div>
+    <div class="meta"><span>${created}</span><span class="dot ${m.read?'read':''}"></span></div>
+  </div>`;
+}
+function paintList(){
+  const q = ($('#mailSearch').value||'').toLowerCase();
+  let items = STATE.list;
+  if(q){
+    items = items.filter(m =>
+      (m.subject||'').toLowerCase().includes(q) ||
+      (m.body||'').toLowerCase().includes(q) ||
+      (m.from?.email||m.from_email||'').toLowerCase().includes(q) ||
+      (m.to?.email||m.to_email||'').toLowerCase().includes(q)
+    );
+  }
+  $('#mailItems').innerHTML = items.length ? items.map(listRow).join('') : '<div class="p-3 text-muted">No emails.</div>';
+  if(STATE.selected){ const el = document.querySelector(`#mailItems .mail-item[data-id="${STATE.selected}"]`); if(el) el.classList.add('active'); }
+}
+function mapFolderToBox(folder){ return folder==='received' ? 'inbox' : folder; }
+async function loadMail(folder='inbox'){
+  STATE.folder = folder;
+  $('#mailItems').innerHTML = '<div class="p-3 text-muted">Loading…</div>';
+  try{
+    const box = mapFolderToBox(folder);
+    const r = await fetch(staffURL(`/api/emails?box=${encodeURIComponent(box)}`));
+    if(!r.ok){ $('#mailItems').innerHTML='<div class="p-3 text-muted">Mail API not available.</div>'; return; }
+    const data = await r.json();
+    STATE.list = Array.isArray(data)?data:[];
+    if(box==='inbox'){
+      const {unread, maxId} = computeUnreadAndMax(STATE.list);
+      INBOX_LAST_MAX_ID = Math.max(INBOX_LAST_MAX_ID, maxId);
+      updateInboxBadgeUI(unread);
+    }
+    paintList();
+    if(STATE.list.length){ selectMail(STATE.list[0].id); } else { clearView(); }
+  }catch(e){ $('#mailItems').innerHTML = `<div class="p-3 text-muted">Error: ${esc(e.message)}</div>`; }
+}
+$('#mailReload').addEventListener('click', ()=>loadMail($('#mailFolder').value));
+$('#mailFolder').addEventListener('change', e=>loadMail(e.target.value));
+$('#mailSearch').addEventListener('input', paintList);
+$('#mailItems').addEventListener('click', e=>{
+  const row=e.target.closest('.mail-item'); if(!row) return; selectMail(row.dataset.id);
+});
+
+function clearView(){
+  STATE.selected=null;
+  $('#viewFrom').textContent='—'; $('#viewTo').textContent='—'; $('#viewWhen').textContent='—'; $('#viewSubj').textContent='—'; $('#viewBody').textContent='Select a mail on the left.';
+  $('#replyTo').value=''; $('#replySubj').value=''; $('#replyBody').value=''; $('#replyMsg').textContent='';
+}
+async function selectMail(id){
+  STATE.selected=id;
+  $$('#mailItems .mail-item').forEach(x=>x.classList.toggle('active', x.dataset.id==id));
+  try{
+    const r=await fetch(staffURL(`/api/emails/${id}`)); const m=await r.json(); if(!r.ok) throw new Error(m?.error||r.status);
+    const from = m.from?.email || m.from_email || '';
+    const to   = m.to?.email   || m.to_email   || '';
+    $('#viewFrom').textContent = from;
+    $('#viewTo').textContent   = to;
+    $('#viewWhen').textContent = fmt(m.created_at);
+    $('#viewSubj').textContent = m.subject || '(no subject)';
+    $('#viewBody').textContent = m.body || '';
+
+    const me = (ME?.email||'').toLowerCase();
+    const replyTo = (String(to).toLowerCase()===me) ? from : to;
+    $('#replyTo').value = replyTo || '';
+    const subj = m.subject || '';
+    $('#replySubj').value = subj.startsWith('Re:') ? subj : `Re: ${subj}`;
+    $('#replyBody').value = '';
+    $('#replyMsg').textContent = '';
+  }catch(err){ alert('Open failed: '+err.message); }
+}
+$('#actTrash').addEventListener('click', async ()=>{
+  if(!STATE.selected) return;
+  try{ await actDelete(STATE.selected); loadMail($('#mailFolder').value); loadTrash(); pollInbox(); }
+  catch(err){ alert('Delete failed: '+err.message); }
+});
+$('#actRead').addEventListener('click', async ()=>{
+  if(!STATE.selected) return;
+  try{
+    await actRead(STATE.selected);
+    await loadMail($('#mailFolder').value);
+    pollInbox();
+  }catch{}
+});
+$('#replySend').addEventListener('click', async ()=>{
+  const to=$('#replyTo').value.trim(), subject=($('#replySubj').value||'').trim()||'Re:', body=($('#replyBody').value||'').trim(); const msg=$('#replyMsg');
+  if(!to||!body){ msg.textContent='Recipient and body required.'; return; }
+  try{ await sendEmail(to,subject,body); msg.textContent='Reply sent.'; $('#replyBody').value=''; }
+  catch(err){ msg.textContent='Failed: '+err.message; }
+});
+
+/* Sent */
+const SENT={list:[], selected:null};
+function sentRow(m){
+  const who = m.to?.email || m.to_email || '';
+  const created = m.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+  return `<div class="mail-item" data-id="${m.id}">
+    <div class="d-flex flex-column">
+      <span class="who">${esc(who||'(unknown)')}</span>
+      <span class="sub">${esc(m.subject||'(no subject)')}</span>
+    </div>
+    <div class="meta"><span>${created}</span><span class="dot read"></span></div>
+  </div>`;
+}
+function paintSent(){
+  const q = ($('#sentSearch').value||'').toLowerCase();
+  let items = SENT.list;
+  if(q){
+    items = items.filter(m =>
+      (m.subject||'').toLowerCase().includes(q) ||
+      (m.body||'').toLowerCase().includes(q) ||
+      (m.to?.email||m.to_email||'').toLowerCase().includes(q)
+    );
+  }
+  $('#sentItems').innerHTML = items.length ? items.map(sentRow).join('') : '<div class="p-3 text-muted">No sent emails.</div>';
+  if(SENT.selected){ const el = document.querySelector(`#sentItems .mail-item[data-id="${SENT.selected}"]`); if(el) el.classList.add('active'); }
+}
+async function loadSent(){
+  $('#sentItems').innerHTML = '<div class="p-3 text-muted">Loading…</div>';
+  try{
+    const r = await fetch(staffURL('/api/emails?box=sent'));
+    if(!r.ok){ $('#sentItems').innerHTML='<div class="p-3 text-muted">Mail API not available.</div>'; return; }
+    const data = await r.json();
+    SENT.list = Array.isArray(data)?data:[];
+    paintSent();
+    if(SENT.list.length){ openSent(SENT.list[0].id); } else { clearSentView(); }
+  }catch(e){ $('#sentItems').innerHTML = `<div class="p-3 text-muted">Error: ${esc(e.message)}</div>`; }
+}
+function clearSentView(){
+  SENT.selected=null;
+  $('#sentFrom').textContent='—'; $('#sentTo').textContent='—'; $('#sentWhen').textContent='—'; $('#sentSubj').textContent='—'; $('#sentBody').textContent='Select a sent mail on the left.';
+  $('#sentReplyTo').value=''; $('#sentReplySubj').value=''; $('#sentReplyBody').value=''; $('#sentReplyMsg').textContent='';
+}
+async function openSent(id){
+  SENT.selected=id;
+  $$('#sentItems .mail-item').forEach(x=>x.classList.toggle('active', x.dataset.id==id));
+  try{
+    const r=await fetch(staffURL(`/api/emails/${id}`)); const m=await r.json(); if(!r.ok) throw new Error(m?.error||r.status);
+    const from = m.from?.email || m.from_email || '';
+    const to   = m.to?.email   || m.to_email   || '';
+    $('#sentFrom').textContent = from;
+    $('#sentTo').textContent   = to;
+    $('#sentWhen').textContent = fmt(m.created_at);
+    $('#sentSubj').textContent = m.subject || '(no subject)';
+    $('#sentBody').textContent = m.body || '';
+
+    $('#sentReplyTo').value = to || '';
+    const subj = m.subject || '';
+    $('#sentReplySubj').value = subj.startsWith('Re:') ? subj : `Re: ${subj}`;
+    $('#sentReplyBody').value = '';
+    $('#sentReplyMsg').textContent = '';
+  }catch(err){ alert('Open failed: '+err.message); }
+}
+$('#sentItems').addEventListener('click', e=>{
+  const row=e.target.closest('.mail-item'); if(!row) return; openSent(row.dataset.id);
+});
+$('#sentReload').addEventListener('click', loadSent);
+$('#sentSearch').addEventListener('input', paintSent);
+$('#sentTrash').addEventListener('click', async ()=>{
+  if(!SENT.selected) return;
+  try{ await actDelete(SENT.selected); loadSent(); loadTrash(); pollInbox(); }
+  catch(err){ alert('Delete failed: '+err.message); }
+});
+$('#sentReplySend').addEventListener('click', async ()=>{
+  const to=$('#sentReplyTo').value.trim(), subject=($('#sentReplySubj').value||'').trim()||'Re:', body=($('#sentReplyBody').value||'').trim(); const msg=$('#sentReplyMsg');
+  if(!to||!body){ msg.textContent='Recipient and body required.'; return; }
+  try{ await sendEmail(to,subject,body); msg.textContent='Sent.'; $('#sentReplyBody').value=''; }
+  catch(err){ msg.textContent='Failed: '+err.message; }
+});
+
+/* Trash */
+function trashRow(m){
+  const from = m.from?.email || m.from_email || '';
+  const to   = m.to?.email   || m.to_email   || '';
+  return `<div class="p-3 border rounded-3 d-flex align-items-center justify-content-between" data-id="${m.id}">
+    <div class="me-3">
+      <div class="small text-muted">${esc(from)} → ${esc(to)}</div>
+      <div class="fw-bold">${esc(m.subject||'(no subject)')}</div>
+      <div class="small text-muted">${fmt(m.created_at)}</div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btnx" data-tact="restore"><i class="fa-solid fa-rotate-left me-1"></i>Restore</button>
+      <button class="btnx btn-dangerx" data-tact="purge"><i class="fa-solid fa-trash-can me-1"></i>Delete forever</button>
+    </div>
+  </div>`;
+}
+async function loadTrash(){
+  const list=$('#trashList'); list.innerHTML='<div class="text-muted">Loading…</div>';
+  try{
+    const r = await fetch(staffURL('/api/emails?box=trash'));
+    if(!r.ok){ list.innerHTML='<div class="text-muted">Mail API not available.</div>'; return; }
+    const data = await r.json();
+    const rows = Array.isArray(data)?data:[];
+    list.innerHTML = rows.length ? rows.map(trashRow).join('') : '<div class="text-muted">Nothing in trash.</div>';
+  }catch(e){ list.innerHTML = `<div class="text-muted">Error: ${esc(e.message)}</div>`; }
+}
+$('#trashList').addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button[data-tact]'); if(!btn) return;
+  const row = e.target.closest('[data-id]'); const id = row?.dataset.id; if(!id) return;
+  try{
+    if(btn.dataset.tact==='restore'){ await actRestore(id); }
+    else if(btn.dataset.tact==='purge'){ await actDelete(id); }
+    await loadTrash(); await loadMail($('#mailFolder').value); await loadSent(); pollInbox();
+  }catch(err){ alert('Action failed: '+err.message); }
+});
+$('#trashReload').addEventListener('click', loadTrash);
+
+/* ===== Users ===== */
+function userCard(u){
+  const band = (u.last_band || u.last_risk!=null)
+    ? `<span class="badge-soft">${esc(u.last_band||'—')}${u.last_risk!=null?` • ${u.last_risk}%`:''}</span>` : '';
+  const when = u.last_time ? `<div class="small text-muted">Last update: ${fmt(u.last_time)}</div>` : '';
+  return `<div class="p-2 border rounded-3 d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <img src="${esc(u.profile_photo||'') || ph}" class="avatar" alt="user"/>
+      <div>
+        <div class="fw-bold">${esc(u.name||'(no name)')}</div>
+        <div class="small">&lt;${esc(u.email||'')}&gt;</div>
+        <div class="small text-muted">${band}</div>
+        ${when}
+      </div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <button class="btnx" data-act="message" data-email="${esc(u.email||'')}"><i class="fa-regular fa-paper-plane me-1"></i>Email</button>
+    </div>
+  </div>`;
+}
+function paintUsers(){
+  const q = ($('#u_q').value||'').trim().toLowerCase();
+  const filtered = q ? USERS.filter(u=> (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q)) : USERS;
+  const html = filtered.length ? filtered.map(userCard).join('') : '<div class="text-muted">No users.</div>';
+  $('#u_list').innerHTML = html;
+}
+$('#u_reload').addEventListener('click', loadUsers);
+$('#u_q').addEventListener('input', paintUsers);
+$('#u_list').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-act="message"]'); if(!btn) return;
+  const email = btn.dataset.email || '';
+  if(!email) return;
+  $('#sideNav a[data-target="sec-messages"]').click();
+  $('#m_scope').value='users';
+  buildRecipientOptions();
+  const to = $('#m_to');
+  for (let i=0;i<to.options.length;i++){ if(to.options[i].value===email){ to.selectedIndex=i; break; } }
+});
+
+/* ===== Boot ===== */
+(async function init(){
+  await fetchMe();
+  await Promise.all([loadUsers(), loadDepartmentStaff(), loadAdmins()]);
+  buildRecipientOptions();
+  await loadMail('inbox');
+  await loadSent();
+  await loadTrash();
+
+  if(!getLastSeenId() && INBOX_LAST_MAX_ID) setLastSeenId(INBOX_LAST_MAX_ID);
+  startPolling();
+})();
+</script>
+</body>
+</html>

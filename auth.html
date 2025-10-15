@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Authentication – Dropout Predictor</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.2.3/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+ 
+  <style>
+    :root {
+      --primary: #4361ee;
+      --secondary: #3f37c9;
+      --success: #4cc9f0;
+      --dark: #212529;
+      --light: #f8f9fa;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+    }
+    
+    .auth-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex: 1;
+      padding: 2rem;
+    }
+    
+    .auth-wrapper {
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.08);
+      padding: 2rem;
+      transition: all 0.3s ease;
+      border: none;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .auth-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+    }
+    
+    .auth-header {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .auth-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--dark);
+      position: relative;
+      display: inline-block;
+      margin-bottom: 0.5rem;
+    }
+    
+    .auth-title::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      border-radius: 3px;
+    }
+    
+    .auth-subtitle {
+      color: #6c757d;
+      font-size: 1rem;
+    }
+    
+    .form-tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid #e0e3e9;
+    }
+    
+    .nav-link {
+      padding: 0.5rem 1.25rem;
+      color: #6c757d;
+      font-weight: 600;
+      border: none;
+      position: relative;
+      transition: all 0.3s;
+      font-size: 0.95rem;
+    }
+    
+    .nav-link.active {
+      color: var(--primary);
+    }
+    
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--primary);
+    }
+    
+    .form-floating .form-control {
+      border-radius: 0.5rem;
+      height: 3.5rem;
+      padding: 1rem 1rem;
+      border: 1px solid #e0e3e9;
+      transition: all 0.3s;
+    }
+    
+    .form-floating .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.15);
+    }
+    
+    .form-floating label {
+      padding: 0.5rem 1rem;
+      color: #6c757d;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    
+    .form-floating>.form-control:focus~label, 
+    .form-floating>.form-control:not(:placeholder-shown)~label {
+      transform: scale(0.85) translateY(-0.7rem) translateX(0.4rem);
+      color: var(--primary);
+    }
+    
+    .btn-auth {
+      padding: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s;
+      border: none;
+      width: 100%;
+      font-size: 0.95rem;
+    }
+    
+    .btn-login { 
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+    
+    .btn-register { 
+      background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+    }
+    
+    .btn-admin { 
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    }
+    
+    .btn-auth:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0.3rem 0.6rem rgba(0,0,0,0.1);
+    }
+    
+    .auth-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+    
+    .auth-footer a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .tab-pane {
+      padding: 0 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .auth-wrapper {
+        padding: 1.5rem;
+        margin: 0 1rem;
+      }
+      
+      .auth-title {
+        font-size: 1.5rem;
+      }
+      
+      .form-tabs {
+        flex-wrap: wrap;
+      }
+      
+      .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    :root{
+      --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+                   Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    *{ font-family: var(--font-sans); }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="index.html">Students Dropout Predictor LOGIN Portal</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="index.html#home">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="index.html#how-it-works">How It Works</a></li>
+          <li class="nav-item"><a class="nav-link" href="index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Auth Section -->
+  <div class="auth-container">
+    <div class="auth-wrapper">
+      <div class="auth-header">
+        <h1 class="auth-title">Account Access</h1>
+        <p class="auth-subtitle">Choose your authentication method below</p>
+      </div>
+      
+      <ul class="nav form-tabs nav-tabs" id="authTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab">
+            Login
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register" type="button" role="tab">
+            Register
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff" type="button" role="tab">
+            Staff
+          </button>
+        </li>
+        <!-- Admin tab -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab">
+            Admin
+          </button>
+        </li>
+      </ul>
+      
+      <div class="tab-content" id="authTabsContent">
+        <!-- User Login -->
+        <div class="tab-pane fade show active" id="login" role="tabpanel">
+          <form action="/login" method="post">
+            <div class="form-floating mb-3">
+              <input
+                type="email"
+                class="form-control"
+                id="userLoginEmail"
+                name="email"
+                placeholder="name@example.com"
+                required
+              >
+              <label for="userLoginEmail">Email</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="password"
+                class="form-control"
+                id="userLoginPassword"
+                name="password"
+                placeholder="Password"
+                required
+              >
+              <label for="userLoginPassword"><i class="fas fa-lock me-1"></i>Password</label>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label small" for="rememberMe">Remember me</label>
+              </div>
+              <a href="#" class="small text-decoration-none">Forgot password?</a>
+            </div>
+            <button type="submit" class="btn btn-login btn-auth mb-2">
+              <i class="fas fa-sign-in-alt me-1"></i>Login
+            </button>
+            
+            <div class="auth-footer">
+              New user? <a href="#" onclick="switchTab('register-tab')">Create account</a>
+            </div>
+          </form>
+        </div>
+        
+        <!-- User Register -->
+        <div class="tab-pane fade" id="register" role="tabpanel">
+          <form action="/register" method="post">
+            <div class="form-floating mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="regName"
+                name="name"
+                placeholder="Your Name"
+                required
+              >
+              <label for="regName"><i class="fas fa-user me-1"></i>Full Name</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="email"
+                class="form-control"
+                id="regEmail"
+                name="email"
+                placeholder="name@example.com"
+                required
+              >
+              <label for="regEmail"><i class="fas fa-envelope me-1"></i>Email</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="password"
+                class="form-control"
+                id="regPassword"
+                name="password"
+                placeholder="Password"
+                required
+              >
+              <label for="regPassword"><i class="fas fa-lock me-1"></i>Password</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="password"
+                class="form-control"
+                id="regConfirmPassword"
+                name="confirmPassword"
+                placeholder="Confirm Password"
+                required
+              >
+              <label for="regConfirmPassword"><i class="fas fa-lock me-1"></i>Confirm Password</label>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="termsCheck" required>
+              <label class="form-check-label small" for="termsCheck">
+                I agree to the <a href="#" class="text-decoration-none">Terms</a> and <a href="#" class="text-decoration-none">Privacy Policy</a>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-register btn-auth">
+              <i class="fas fa-user-plus me-1"></i>Register
+            </button>
+            
+            <div class="auth-footer mt-2">
+              Have an account? <a href="#" onclick="switchTab('login-tab')">Sign in</a>
+            </div>
+          </form>
+        </div>
+
+        <!-- Department Staff Login -->
+        <div class="tab-pane fade" id="staff" role="tabpanel">
+          <form id="staffForm" action="/staff/login" method="post" novalidate>
+            <div class="form-floating mb-3">
+              <input
+                type="email"
+                class="form-control"
+                id="staffEmail"
+                name="email"
+                placeholder="staff@example.com"
+                required
+              >
+              <label for="staffEmail"><i class="fas fa-envelope me-1"></i>Staff Email</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="password"
+                class="form-control"
+                id="staffPassword"
+                name="password"
+                placeholder="Password"
+                required
+              >
+              <label for="staffPassword"><i class="fas fa-lock me-1"></i>Password</label>
+            </div>
+
+            <div id="staffAlert" class="alert alert-danger d-none" role="alert"></div>
+
+            <button type="submit" class="btn btn-login btn-auth mb-2" id="staffLoginBtn">
+              <i class="fas fa-user-shield me-1"></i>Sign in as Staff
+            </button>
+
+            <div class="auth-footer">
+              Not staff? <a href="#" onclick="switchTab('login-tab')">Go to User Login</a>
+            </div>
+          </form>
+          <div class="text-center small text-muted mt-2">
+            Departments supported: Academic, Finance, Mental Health
+          </div>
+        </div>
+
+        <!-- Admin Login -->
+        <div class="tab-pane fade" id="admin" role="tabpanel">
+         
+          <form id="adminForm" action="/admin/login" method="post" novalidate>
+            <div class="form-floating mb-3">
+              <input
+                type="email"
+                class="form-control"
+                id="adminEmail"
+                name="email"
+                placeholder="admin@example.com"
+                required
+              >
+              <label for="adminEmail"><i class="fas fa-envelope me-1"></i>Admin Email</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input
+                type="password"
+                class="form-control"
+                id="adminPassword"
+                name="password"
+                placeholder="Password"
+                required
+              >
+              <label for="adminPassword"><i class="fas fa-lock me-1"></i>Password</label>
+            </div>
+
+            <div id="adminAlert" class="alert alert-danger d-none" role="alert"></div>
+
+            <button type="submit" class="btn btn-admin btn-auth mb-2" id="adminLoginBtn">
+              <i class="fas fa-user-cog me-1"></i>Sign in as Admin
+            </button>
+
+            <div class="auth-footer">
+              Not an admin? <a href="#" onclick="switchTab('login-tab')">Go to User Login</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-auto bg-dark text-white py-4">
+    <div class="container text-center">
+      <p class="mb-1">&copy; 2025 Dropout Predictor. All rights reserved.</p>
+      <nav class="nav justify-content-center">
+        <a class="nav-link text-white" href="index.html">Home</a>
+        <a class="nav-link text-white" href="index.html#how-it-works">How It Works</a>
+        <a class="nav-link text-white" href="index.html#contact">Contact</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/js/all.min.js" defer></script>
+  
+  <script>
+    // Switch tabs 
+    function switchTab(tabId) {
+      const tab = document.getElementById(tabId);
+      const tabInstance = new bootstrap.Tab(tab);
+      tabInstance.show();
+    }
+
+    // Staff login 
+    (function(){
+      const form = document.getElementById('staffForm');
+      const btn  = document.getElementById('staffLoginBtn');
+      const alertBox = document.getElementById('staffAlert');
+      if (!form) return;
+
+      function pageFor(slug) {
+        const key = String(slug || '').toLowerCase();
+        const map = {
+          'academic': '/dept-academic.html',
+          'finance': '/dept-finance.html',
+          'mental_health': '/dept-mental-health.html',
+          'mental-health': '/dept-mental-health.html'
+        };
+        return map[key] || '/admin-dashboard';
+      }
+
+      function showError(msg){
+        if(!alertBox) return;
+        alertBox.textContent = msg || 'Invalid email or password';
+        alertBox.classList.remove('d-none');
+      }
+      function hideError(){
+        if(!alertBox) return;
+        alertBox.classList.add('d-none');
+        alertBox.textContent = '';
+      }
+
+      form.addEventListener('submit', async (e)=>{
+        hideError();
+        e.preventDefault();
+        btn.disabled = true;
+
+        try {
+          const email = (form.email.value || '').trim();
+          const password = (form.password.value || '').trim();
+          if (!email || !password) {
+            showError('Enter email and password.');
+            btn.disabled = false;
+            return;
+          }
+
+          const r = await fetch('/staff/login', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ email, password })
+          });
+
+          if (r.redirected) {
+            window.location.href = r.url;
+            return;
+          }
+
+          let data = {};
+          try { data = await r.json(); } catch {}
+
+          if (!r.ok) {
+            showError(data.error || 'Invalid email or password');
+            btn.disabled = false;
+            return;
+          }
+
+          const slug = data?.staff?.department?.slug || data?.department?.slug;
+          const dest = data?.redirect || pageFor(slug);
+          window.location.href = dest;
+
+        } catch (err) {
+          form.submit();
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+
+    // Admin login  
+    (function(){
+      const form = document.getElementById('adminForm');
+      const btn  = document.getElementById('adminLoginBtn');
+      const alertBox = document.getElementById('adminAlert');
+      if (!form) return;
+
+      function showError(msg){
+        if(!alertBox) return;
+        alertBox.textContent = msg || 'Invalid admin email or password';
+        alertBox.classList.remove('d-none');
+      }
+      function hideError(){
+        if(!alertBox) return;
+        alertBox.classList.add('d-none');
+        alertBox.textContent = '';
+      }
+
+      form.addEventListener('submit', async (e)=>{
+        hideError();
+        e.preventDefault();
+        btn.disabled = true;
+
+        try {
+          const email = (form.email.value || '').trim();
+          const password = (form.password.value || '').trim();
+          if (!email || !password) {
+            showError('Enter admin email and password.');
+            btn.disabled = false;
+            return;
+          }
+
+          // Use form-encoded to match the backend route
+          const body = new URLSearchParams({ email, password });
+
+          const r = await fetch('/admin/login', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body,
+            redirect: 'follow'
+          });
+
+          // Backend redirects on success; on failure it redirects to /admin-login.html
+          if (r.redirected) {
+            const url = r.url || '';
+            if (url.includes('/admin-dashboard')) {
+              window.location.href = url;
+              return;
+            }
+            if (url.includes('/admin-login')) {
+              showError('Invalid admin email or password');
+              return;
+            }
+          }
+
+          // If not redirected but OK (unlikely), try going straight to dashboard
+          if (r.ok) {
+            window.location.href = '/admin-dashboard';
+            return;
+          }
+
+          showError('Login failed. Please try again.');
+
+        } catch (err) {
+          // Network issue - fallback to classic form submit so server can redirect
+          form.submit();
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
