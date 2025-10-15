@@ -535,18 +535,18 @@ small.muted { color:#6c757d }
     </div>
   </div>
 
-  <!-- Bootstrap JS Bundle -->
+ 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- AOS Animation -->
+
   <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-  <!-- Custom JS (optional) -->
+
   <script src="/static/js/app.js"></script>
 
-  <!-- Inline logic to pull "How It Works" and Stats from /api/dropout-analysis -->
+
   <script>
     AOS.init({ duration: 800, easing: 'ease-in-out', once: true });
 
-    // Smooth scrolling for in-page links that are not Bootstrap toggles/placeholders
+    
     document.querySelectorAll('a[href^="#"]').forEach(a=>{
       a.addEventListener('click', function(e){
         const href = this.getAttribute('href');
@@ -587,7 +587,7 @@ small.muted { color:#6c757d }
       });
     })();
 
-    // ------- Dynamic "How It Works" and Stats -------
+    
     async function loadHowItWorks() {
       const fallback = {
         accuracy: 0.95, precision: 0.90, recall: 0.90,
@@ -637,7 +637,7 @@ small.muted { color:#6c757d }
         document.getElementById('stat-institutions').textContent = inst.toLocaleString() + '+';
 
       } catch (err) {
-        // Use defaults silently; still show something nice
+        
         console.warn('[index] Using fallback stats:', err?.message || err);
         document.getElementById('features-count').textContent = '30';
         document.getElementById('metric-acc').textContent = '95.0';
